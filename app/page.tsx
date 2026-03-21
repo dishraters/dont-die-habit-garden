@@ -3,24 +3,38 @@
 import { useState, useEffect } from 'react'
 import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import PlantCard from './components/PlantCard'
 
 const HABITS = [
-  { id: 'gratitude', name: 'Gratitude', emoji: '🌟', color: '#fbbf24' },
-  { id: 'meditation', name: 'Meditation', emoji: '🧘', color: '#60a5fa' },
-  { id: 'training', name: 'Training', emoji: '💪', color: '#ef4444' },
-  { id: 'breakfast', name: 'Breakfast', emoji: '🍳', color: '#f97316' },
-  { id: 'lunch', name: 'Lunch', emoji: '🥗', color: '#22c55e' },
-  { id: 'dinner', name: 'Dinner', emoji: '🍽️', color: '#8b5cf6' },
-  { id: 'sleeptime_stories', name: 'Sleeptime Stories', emoji: '📖', color: '#ec4899' },
-  { id: 'planning', name: 'Planning', emoji: '📋', color: '#06b6d4' },
-  { id: 'mindful_movements', name: 'Mindful Movements', emoji: '🧘', color: '#10b981' },
+  { id: 'gratitude', name: 'Gratitude', plantName: 'Moonbloom', color: '#fbbf24' },
+  { id: 'meditation', name: 'Meditation', plantName: 'Lotus Seed', color: '#60a5fa' },
+  { id: 'training', name: 'Training', plantName: 'Iron Fern', color: '#ef4444' },
+  { id: 'breakfast', name: 'Breakfast', plantName: 'Sunpetal', color: '#f97316' },
+  { id: 'lunch', name: 'Lunch', plantName: 'Meadowleaf', color: '#22c55e' },
+  { id: 'dinner', name: 'Dinner', plantName: 'Twilight Bloom', color: '#8b5cf6' },
+  { id: 'sleeptime_stories', name: 'Sleeptime Stories', plantName: 'Moon Vine', color: '#ec4899' },
+  { id: 'planning', name: 'Planning', plantName: 'Compass Fern', color: '#06b6d4' },
+  { id: 'mindful_movements', name: 'Mindful Movements', plantName: 'Breeze Orchid', color: '#10b981' },
 ]
+
+
 
 export default function Home() {
   const [completedToday, setCompletedToday] = useState<string[]>([])
   const [ddc, setDdc] = useState(0)
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
+  const [streaks, setStreaks] = useState<{ [key: string]: number }>({
+    gratitude: 12,
+    meditation: 12,
+    training: 8,
+    breakfast: 12,
+    lunch: 12,
+    dinner: 12,
+    sleeptime_stories: 5,
+    planning: 12,
+    mindful_movements: 2,
+  })
 
   // TODO: Add Firebase Auth
   useEffect(() => {
@@ -61,43 +75,17 @@ export default function Home() {
         </div>
 
         {/* Habits Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {HABITS.map((habit) => {
-            const isComplete = completedToday.includes(habit.id)
-            return (
-              <div
-                key={habit.id}
-                className="habit-card"
-                style={{
-                  borderLeft: `4px solid ${habit.color}`,
-                }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-3xl">{habit.emoji}</span>
-                    <h3 className="font-bold text-lg">{habit.name}</h3>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  {isComplete ? (
-                    <span className="habit-complete">✅ Completed</span>
-                  ) : (
-                    <button
-                      onClick={() => markComplete(habit.id)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition"
-                    >
-                      Mark Complete
-                    </button>
-                  )}
-                </div>
-
-                <div className="text-sm text-gray-600">
-                  🔥 Streak: {Math.floor(Math.random() * 30)} days
-                </div>
-              </div>
-            )
-          })}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {HABITS.map((habit) => (
+            <PlantCard
+              key={habit.id}
+              habitId={habit.id}
+              habitName={habit.name}
+              streak={streaks[habit.id as keyof typeof streaks] || 0}
+              isCompleted={completedToday.includes(habit.id)}
+              onMarkComplete={() => markComplete(habit.id)}
+            />
+          ))}
         </div>
 
         {/* CTA Buttons */}
