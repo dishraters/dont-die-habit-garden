@@ -1,5 +1,17 @@
-// Mock habit functions using localStorage for MVP
-// Replace with real Firebase calls when ready
+/**
+ * Habit Functions - Firestore Integration
+ * 
+ * Syncs with Habit Garden, Dishrated, Planning, Gratitude, TrainLog
+ */
+
+import {
+  recordCompletion,
+  getDDCBalance,
+  getPlantGrowthStage,
+  getCurrentStreak,
+  initDDHGUser,
+  getCompletions,
+} from './firestoreIntegration'
 
 export interface HabitEntry {
   habitId: string
@@ -12,80 +24,124 @@ export interface UserHabits {
   completedToday: string[]
   streaks: { [habitId: string]: number }
   totalDDC: number
+  plantGrowthStage: number
+  currentStreak: number
 }
 
-const STORAGE_KEY = 'ddhg_habits'
-const DDC_KEY = 'ddhg_ddc'
+const HABIT_NAMES = {
+  gratitude: 'Gratitude',
+  meditation: 'Meditation',
+  training: 'Train',
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
+  sleeptime_stories: 'Stop Eating',
+  planning: 'Plan',
+  mindful_movements: 'Mindful Movements',
+}
 
-export function saveHabitCompletion(userId: string, habitId: string, notes?: string, time?: string): void {
+/**
+ * Record a habit completion to Firestore
+ * Automatically calculates DDC, updates streaks, plant growth
+ */
+export async function saveHabitCompletion(
+  userId: string,
+  habitId: string,
+  notes?: string,
+  time?: string,
+  source: 'habit-garden' | 'dishrated' | 'trainlog' | 'planning' | 'gratitude' = 'habit-garden'
+): Promise<void> {
   try {
-    const today = new Date().toDateString()
-    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
-    if (!existing[today]) existing[today] = []
-    if (!existing[today].includes(habitId)) {
-      existing[today].push(habitId)
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(existing))
+    const habitName = HABIT_NAMES[habitId as keyof typeof HABIT_NAMES] || habitId
+    
+    await recordCompletion(userId, habitId, habitName, source, notes)
+    
+    console.log(`✅ Habit completed: ${habitName} (${source})`)
   } catch (e) {
-    console.warn('localStorage not available', e)
+    console.error('Failed to save habit completion:', e)
+    throw e
   }
 }
 
-export function loadUserHabits(userId: string): UserHabits {
+/**
+ * Load user's habits, DDC, streaks, and plant growth stage
+ */
+export async function loadUserHabits(userId: string): Promise<UserHabits> {
   try {
+    const user = await initDDHGUser(userId)
+    const completions = await getCompletions(userId, 100)
+    
+    // Get today's completions
     const today = new Date().toDateString()
-    const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
-    const completedToday: string[] = existing[today] || []
+    const completedToday = completions
+      .filter(c => new Date(c.completedAt).toDateString() === today)
+      .map(c => c.habitId)
+      .filter((v, i, a) => a.indexOf(v) === i) // unique
 
-    // Calculate simple streaks from history
-    const allHabits = ['gratitude', 'meditation', 'training', 'breakfast', 'lunch', 'dinner', 'sleeptime_stories', 'planning', 'mindful_movements']
+    // Build streak map (simplified - real streak logic is in Firestore)
     const streaks: { [key: string]: number } = {}
-    allHabits.forEach(id => {
-      streaks[id] = calculateStreak(existing, id)
+    Object.keys(HABIT_NAMES).forEach(id => {
+      streaks[id] = user.streakCount // User-wide streak for now
     })
 
-    const totalDDC = getDDCBalance(userId)
-
-    return { completedToday, streaks, totalDDC }
+    return {
+      completedToday,
+      streaks,
+      totalDDC: user.totalDDC,
+      plantGrowthStage: user.plantGrowthStage,
+      currentStreak: user.streakCount,
+    }
   } catch (e) {
+    console.error('Failed to load user habits:', e)
+    // Return sensible defaults on error
     return {
       completedToday: [],
-      streaks: { gratitude: 0, meditation: 0, training: 0, breakfast: 0, lunch: 0, dinner: 0, sleeptime_stories: 0, planning: 0, mindful_movements: 0 },
+      streaks: {
+        gratitude: 0,
+        meditation: 0,
+        training: 0,
+        breakfast: 0,
+        lunch: 0,
+        dinner: 0,
+        sleeptime_stories: 0,
+        planning: 0,
+        mindful_movements: 0,
+      },
       totalDDC: 0,
+      plantGrowthStage: 0,
+      currentStreak: 0,
     }
   }
 }
 
-function calculateStreak(history: { [date: string]: string[] }, habitId: string): number {
-  let streak = 0
-  const today = new Date()
-  for (let i = 0; i < 365; i++) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    const dateStr = d.toDateString()
-    if (history[dateStr]?.includes(habitId)) {
-      streak++
-    } else {
-      break
-    }
-  }
-  return streak
-}
-
-export function getDDCBalance(userId: string): number {
+/**
+ * Get user's DDC balance
+ */
+export async function getDDC(userId: string): Promise<number> {
   try {
-    return parseInt(localStorage.getItem(DDC_KEY) || '0', 10)
+    return await getDDCBalance(userId)
   } catch {
     return 0
   }
 }
 
-export function addDDC(userId: string, amount: number): number {
+/**
+ * Get user's current plant growth stage
+ */
+export async function getGrowthStage(userId: string): Promise<number> {
   try {
-    const current = getDDCBalance(userId)
-    const newBalance = current + amount
-    localStorage.setItem(DDC_KEY, String(newBalance))
-    return newBalance
+    return await getPlantGrowthStage(userId)
+  } catch {
+    return 0
+  }
+}
+
+/**
+ * Get user's current streak
+ */
+export async function getStreak(userId: string): Promise<number> {
+  try {
+    return await getCurrentStreak(userId)
   } catch {
     return 0
   }
