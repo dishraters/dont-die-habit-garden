@@ -1,6 +1,5 @@
 'use client';
 
-import GoogleLogin from '../components/GoogleLogin';
 import { useState } from 'react';
 
 export default function LoginPage() {
@@ -8,6 +7,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const handleGoogleLogin = () => {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const redirectUri = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`;
+    const scope = 'openid email profile';
+    
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+      client_id: clientId || '',
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: scope,
+    }).toString()}`;
+
+    if (typeof window !== 'undefined') {
+      window.location.href = authUrl;
+    }
+  };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +58,20 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Google Login */}
-        <GoogleLogin />
+        {/* Google Login Button */}
+        <button
+          onClick={handleGoogleLogin}
+          className="w-full bg-white text-gray-800 border border-gray-300 px-4 py-2 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2"
+        >
+          <svg
+            className="w-5 h-5"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032 c0-3.331,2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.461,2.268,15.365,1.25,12.545,1.25 c-6.343,0-11.5,5.157-11.5,11.5c0,6.343,5.157,11.5,11.5,11.5c6.344,0,11.5-5.157,11.5-11.5c0-0.828-0.084-1.628-0.239-2.405 H12.545z" />
+          </svg>
+          Sign in with Google
+        </button>
 
         {/* Divider */}
         <div className="relative my-6">
