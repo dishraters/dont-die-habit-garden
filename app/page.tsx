@@ -5,10 +5,11 @@ import PlantCard from './components/PlantCard'
 import AudioPlayer from './components/AudioPlayer'
 import MovementsCarousel from './components/MovementsCarousel'
 import HabitEntryModal from './components/HabitEntryModal'
+import GratitudeModal from './components/GratitudeModal'
 import { saveHabitCompletion, loadUserHabits, addDDC } from '@/lib/habitFunctions'
 
 const HABITS = [
-  { id: 'gratitude', name: 'Gratitude', plantName: 'Moonbloom', color: '#fbbf24', requiresModal: false },
+  { id: 'gratitude', name: 'Gratitude', plantName: 'Moonbloom', color: '#fbbf24', requiresModal: true },
   { id: 'meditation', name: 'Meditation', plantName: 'Lotus Seed', color: '#60a5fa', requiresModal: true },
   { id: 'training', name: 'Training', plantName: 'Iron Fern', color: '#ef4444', requiresModal: true },
   { id: 'breakfast', name: 'Breakfast', plantName: 'Sunpetal', color: '#f97316', requiresModal: true },
@@ -179,6 +180,19 @@ export default function Home() {
           </button>
         </div>
       </div>
+
+      {/* Gratitude Modal */}
+      {openModal === 'gratitude' && (
+        <GratitudeModal
+          isOpen={true}
+          onClose={() => setOpenModal(null)}
+          onSubmit={(text) => {
+            doMarkComplete('gratitude', text)
+            setOpenModal(null)
+          }}
+          isLoading={false}
+        />
+      )}
 
       {/* Audio Player - Meditation */}
       {openModal === 'meditation' && (
