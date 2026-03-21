@@ -1,38 +1,28 @@
-// Import plant graphics from existing Habit Garden
-// These are the SVG/image assets already used in the live app
-
-export const PLANT_EMOJIS = {
-  // Seed stage
-  seed: '🌱',
-  
-  // Sprout stage
-  sprout: '🌿',
-  
-  // Growing stage
-  growing: '🌾',
-  
-  // Thriving stage
-  thriving: '🌳',
-  
-  // Legendary stage
-  legendary: '✨🌟',
+// Growth stages with better progression names
+export type GrowthStage = {
+  label: string
+  emoji: string
+  progress: number
 }
 
 // Plant progression: maps streak count to visual stage
-export const getPlantStage = (streak: number) => {
-  if (streak === 0) return { stage: 'Seed', emoji: '🌱', progress: 0 }
-  if (streak < 7) return { stage: 'Sprout', emoji: '🌿', progress: (streak / 7) * 100 }
-  if (streak < 30) return { stage: 'Growing', emoji: '🌾', progress: ((streak - 7) / 23) * 100 }
-  if (streak < 60) return { stage: 'Thriving', emoji: '🌳', progress: ((streak - 30) / 30) * 100 }
-  return { stage: 'Legendary', emoji: '✨', progress: 100 }
+export const getPlantStage = (streak: number): GrowthStage => {
+  if (streak === 0) return { label: 'Seed', emoji: '🌱', progress: 0 }
+  if (streak < 2) return { label: 'Rooted', emoji: '🌱', progress: (streak / 2) * 100 }
+  if (streak < 4) return { label: 'Sprout', emoji: '🌿', progress: ((streak - 2) / 2) * 100 }
+  if (streak < 7) return { label: 'Leafing', emoji: '🌿', progress: ((streak - 4) / 3) * 100 }
+  if (streak < 11) return { label: 'Budding', emoji: '🌾', progress: ((streak - 7) / 4) * 100 }
+  if (streak < 16) return { label: 'Blooming', emoji: '🌸', progress: ((streak - 11) / 5) * 100 }
+  return { label: 'Flourishing', emoji: '🌺', progress: 100 }
 }
 
 // Milestone rewards
 export const getMilestoneReward = (streak: number) => {
+  if (streak === 2) return { reward: 100, message: '🌱 Rooted! +100 DDC bonus' }
+  if (streak === 4) return { reward: 250, message: '🌿 Sprouting! +250 DDC bonus' }
   if (streak === 7) return { reward: 500, message: '🎉 One week! +500 DDC bonus' }
-  if (streak === 30) return { reward: 2000, message: '🌟 One month! +2000 DDC bonus' }
-  if (streak === 60) return { reward: 5000, message: '👑 Two months! +5000 DDC bonus' }
-  if (streak === 365) return { reward: 10000, message: '🏆 One year! +10000 DDC bonus' }
+  if (streak === 11) return { reward: 1000, message: '🌸 Blooming! +1000 DDC bonus' }
+  if (streak === 16) return { reward: 2000, message: '🌺 Flourishing! +2000 DDC bonus' }
   return null
 }
 

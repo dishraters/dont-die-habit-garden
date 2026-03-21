@@ -37,12 +37,12 @@ export default function PlantCard({
       }}
     >
       {/* Plant Emoji - Large (Clickable for Meditation/Movements/Stories) */}
-      <div className="text-center mb-4 cursor-pointer" onClick={onOpenFeature}>
+      <div className="text-center mb-4 cursor-pointer hover:opacity-80 transition" onClick={onOpenFeature}>
         <div className="text-6xl mb-2 transition-transform hover:scale-110">
           {plantStage.emoji}
         </div>
         <h3 className="font-bold text-lg text-gray-800">{metadata.plantName}</h3>
-        <p className="text-sm text-gray-600">{plantStage.stage}</p>
+        <p className="text-sm text-gray-600">{plantStage.label}</p>
       </div>
 
       {/* Habit Name */}
@@ -70,11 +70,12 @@ export default function PlantCard({
           />
         </div>
         <p className="text-xs text-gray-600 mt-1 text-center">
-          {streak < 7 && `${7 - streak} days to Sprout`}
-          {streak >= 7 && streak < 30 && `${30 - streak} days to Growing`}
-          {streak >= 30 && streak < 60 && `${60 - streak} days to Thriving`}
-          {streak >= 60 && streak < 365 && `${365 - streak} days to Legendary`}
-          {streak >= 365 && '✨ Legendary!'}
+          {streak < 2 && `${2 - streak} days to Rooted`}
+          {streak >= 2 && streak < 4 && `${4 - streak} days to Sprout`}
+          {streak >= 4 && streak < 7 && `${7 - streak} days to Budding`}
+          {streak >= 7 && streak < 11 && `${11 - streak} days to Blooming`}
+          {streak >= 11 && streak < 16 && `${16 - streak} days to Flourishing`}
+          {streak >= 16 && '🌺 Flourishing!'}
         </p>
       </div>
 
