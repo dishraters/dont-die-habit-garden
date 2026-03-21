@@ -106,40 +106,59 @@ Example: User logs exercise on day 1, 2, 3 → hits 3-day milestone → gets +10
 
 **Phase 2 Spending (Future):** DDC unlocks plant skins, premium features, or community rewards.
 
-### 3. Unified Habit Sources
+### 3. Habit Sources: Pull from Existing Apps + Simple Built-In
 
-DDHG automatically pulls completions from 5 apps via webhook:
+DDHG pulls from 3 existing apps via webhook, plus has simple built-in forms for 6 basic wellness habits.
 
-#### **TrainLog** (Exercises)
-- Webhook triggers when user logs a workout
-- Maps to: `habit: "Train"`
-- Example: "5K Run" → plant grows
-- Payload: `{ exerciseName, duration, userId }`
+#### **External Apps (Webhook Integration)**
 
-#### **Dishrated** (Meals)
-- Webhook triggers when user logs a meal
-- Maps to: `habit: "Breakfast" | "Lunch" | "Dinner"`
-- Example: "Salad & Grilled Chicken" → plant grows
-- Payload: `{ mealType, mealName, taste_score, health_score }`
+**Habit Garden - Planning** 📋
+- User creates daily plan in Habit Garden (not DDHG)
+- Webhook: Planning saved → DDHG records token reward
+- Maps to: `habit: "Planning"`
+- Payload: `{ userId, planDate, big_wins[] }`
 
-#### **Habit Garden - Planning**
-- Webhook triggers when user saves daily plan
-- Maps to: `habit: "Plan"`
-- Example: "Set My Day with 3 wins" → plant grows
-- Payload: `{ planDate, big_wins }`
-
-#### **Habit Garden - Gratitude**
-- Webhook triggers when user saves gratitude entry
+**Habit Garden - Gratitude** 🙏
+- User saves gratitude entry in Habit Garden (not DDHG)
+- Webhook: Gratitude saved → DDHG records token reward
 - Maps to: `habit: "Gratitude"`
-- Example: "Grateful for family, health, growth" → plant grows
-- Payload: `{ entryDate, grateful_1, grateful_2, grateful_3 }`
+- Payload: `{ userId, entryDate, grateful_1, grateful_2, grateful_3 }`
 
-#### **DDHG Native** (Manual Tracking)
-- Users can log habits directly in DDHG
-- Example: "Took vitamins" → plant grows
-- Source: `habit: "Custom"`
+**Dishrated - Meals** 🍳🥗🍽️
+- User logs meal in Dishrated (not DDHG)
+- Webhook: Meal logged → DDHG records token reward
+- Maps to: `habit: "Breakfast" | "Lunch" | "Dinner"`
+- Payload: `{ userId, mealType, mealName, health_score }`
 
-**Key Design:** All sources feed the same streak. It doesn't matter if you log in Habit Garden or DDHG—your plant sees it.
+**TrainLog - Exercise** 💪
+- User logs workout in TrainLog (not DDHG)
+- Webhook: Exercise logged → DDHG records token reward
+- Maps to: `habit: "Exercise"`
+- Payload: `{ userId, exerciseName, duration }`
+
+#### **DDHG Native (Simple Built-In Forms)**
+
+**Meditation** 🧘
+- Simple 5-minute timer built in DDHG
+- User taps "Start" → runs timer → marks complete
+- Stores directly in Firestore
+
+**Sleep** 🌙
+- Simple form: "How many hours did you sleep?"
+- User enters hours → saved to Firestore
+- Requires 7+ hours to count
+
+**Stretching** 🤸
+- Simple form: "How many minutes of stretching?"
+- User enters minutes → saved to Firestore
+- Requires 10+ minutes to count
+
+**+ 3 More Simple Habits** (TBD)
+- Each has minimal form (just duration, yes/no, or simple input)
+- Stored in Firestore
+- No external integrations needed
+
+**Key Design:** DDHG is the dashboard. Users log in their preferred app (Habit Garden for planning, Dishrated for meals, TrainLog for exercise). DDHG receives webhooks and awards tokens. Simple habits are logged directly in DDHG.
 
 ### 4. Real-Time Dashboard
 
