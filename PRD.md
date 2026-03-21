@@ -170,6 +170,60 @@ No heavy analytics in Phase 1. Just enough to fuel curiosity and motivation.
 
 ---
 
+## 9-Habit System: Complete Specification
+
+### The Habits (All Must Be Completed Daily)
+
+Users complete **9 distinct habits** (not generic "habit done"). Each has unique criteria and token rewards:
+
+| # | Habit | Criteria | Tokens | Source |
+|---|-------|----------|--------|--------|
+| 1 | 🧘 Meditation | 5+ minutes | +2 base, +10 (7d), +25 (30d) | Habit Garden |
+| 2 | 💪 Exercise | 20+ min OR 5+ intensity | +3 base, +15 (7d), +40 (30d) | TrainLog |
+| 3 | 🍳 Breakfast | Health ≥ 5/10 | +1 base, +8 (7d), +20 (30d) | Dishrated |
+| 4 | 🥗 Lunch | Health ≥ 5/10 | +1 base, +8 (7d), +20 (30d) | Dishrated |
+| 5 | 🍽️ Dinner | Health ≥ 5/10 | +1 base, +8 (7d), +20 (30d) | Dishrated |
+| 6 | 📋 Planning | 3+ big wins saved | +2 base, +12 (7d), +30 (30d) | Habit Garden |
+| 7 | 🙏 Gratitude | 3 grateful + 1 affirmation | +2 base, +12 (7d), +30 (30d) | Habit Garden |
+| 8 | 🌙 Sleep | 7+ hours logged | +2 base, +10 (7d), +25 (30d) | Habit Garden |
+| 9 | 🤸 Stretching | 10+ minutes | +2 base, +10 (7d), +25 (30d) | TrainLog |
+
+### Token Earning Examples
+
+**Day 1 (No Streaks):**
+- Complete all 9 habits → **16 tokens**
+- Complete 5 habits → **8 tokens**
+
+**Day 7 (7-Day Streak Achieved):**
+- All 9 at 7-day streak → **93 tokens**
+- Example: Meditation hits 7-day = +2 base + 10 bonus = +12 that day
+
+**Day 30 (30-Day Streak):**
+- All 9 at 30-day streak → **244 tokens**
+- Meditation: +2 base + 25 bonus = +27 that day
+
+### How It Works
+
+1. **Daily:** User completes habits across 5 apps (Habit Garden, Dishrated, TrainLog, native DDHG)
+2. **Webhook:** Each completion triggers token calculation in DDHG
+3. **Streak Tracking:** Each habit has independent streak (resets after 2 missed days)
+4. **Plant Streak:** Separate from habits—as long as user completes ANY habit daily, plant grows
+5. **Milestone Notifications:** 7-day streaks = special notification + 5-token bonus
+6. **Visual Dashboard:** Shows all 9 habits, today's progress, streaks, and tokens earned
+
+### Full Specification
+
+**See HABITS_SPEC.md for:**
+- Complete token earning rules
+- Milestone bonuses
+- Token spending (Phase 2)
+- UI mockups
+- Real user examples
+- Firestore schema updates
+- Implementation checklist
+
+---
+
 ## Technical Architecture
 
 ### Data Layer: Firestore
