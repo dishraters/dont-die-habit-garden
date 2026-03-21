@@ -5,6 +5,7 @@ import PlantCard from './components/PlantCard'
 import AudioPlayer from './components/AudioPlayer'
 import MovementsCarousel from './components/MovementsCarousel'
 import HabitEntryModal from './components/HabitEntryModal'
+import DishRatedModal from './components/DishRatedModal'
 import GratitudeModal from './components/GratitudeModal'
 import PlanningModal from './components/PlanningModal'
 import { saveHabitCompletion, loadUserHabits, addDDC } from '@/lib/habitFunctions'
@@ -92,9 +93,7 @@ export default function Home() {
     setDdc(0)
   }
 
-  const entryHabit = openModal && MEAL_HABITS.includes(openModal)
-    ? HABITS.find(h => h.id === openModal)
-    : null
+  const mealHabit = openModal && MEAL_HABITS.includes(openModal) ? openModal : null
 
   if (loading) {
     return (
@@ -234,14 +233,28 @@ export default function Home() {
         />
       )}
 
-      {/* Habit Entry Modal (Training, Breakfast, Lunch, Dinner) */}
-      {entryHabit && (
+      {/* DishRated Modal (Breakfast, Lunch, Dinner) */}
+      {mealHabit && mealHabit !== 'training' && (
+        <DishRatedModal
+          mealType={mealHabit as 'breakfast' | 'lunch' | 'dinner'}
+          isOpen={true}
+          onClose={() => setOpenModal(null)}
+          onSubmit={(dishName, healthScore, costScore) => {
+            doMarkComplete(mealHabit, `${dishName} (Health: ${healthScore}/10, Cost: ${costScore}/10)`)
+            setOpenModal(null)
+          }}
+          isLoading={false}
+        />
+      )}
+
+      {/* Training Modal (Simple form) */}
+      {openModal === 'training' && (
         <HabitEntryModal
-          habitId={entryHabit.id}
-          habitName={entryHabit.name}
-          color={entryHabit.color}
+          habitId="training"
+          habitName="Training"
+          color="#ef4444"
           onSave={(data) => {
-            doMarkComplete(entryHabit.id, data.description, data.time)
+            doMarkComplete('training', data.description, data.time)
             setOpenModal(null)
           }}
           onClose={() => setOpenModal(null)}
