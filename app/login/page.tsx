@@ -1,86 +1,106 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import GoogleLogin from '../components/GoogleLogin';
+import { useState } from 'react';
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!email || !password) {
-      setError('Email and password required')
-      return
-    }
-    setLoading(true)
-    // Mock login - just store email in localStorage
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      const user = { email, name: email.split('@')[0], id: 'user-' + Date.now() }
-      localStorage.setItem('ddhg_user', JSON.stringify(user))
-      router.push('/')
-    } catch {
-      setError('Login failed. Please try again.')
+      // TODO: Integrate with Firebase Auth
+      console.log('Email login:', email, password);
+      // For now, just redirect to dashboard
+      window.location.href = '/';
+    } catch (err) {
+      setError('Login failed. Please try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 4px 24px rgba(0,0,0,0.2)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '3rem' }}>🌱</div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#333' }}>Welcome Back</h1>
-          <p style={{ color: '#666', fontSize: '0.875rem' }}>Log in to your Habit Garden</p>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600">
+            🌱 DDHG
+          </h1>
+          <p className="text-gray-600 mt-2">Don't Die Habit Garden</p>
         </div>
 
-        <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '600', color: '#333' }}>Email</label>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
+
+        {/* Google Login */}
+        <GoogleLogin />
+
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or with email</span>
+          </div>
+        </div>
+
+        {/* Email Login Form */}
+        <form onSubmit={handleEmailLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
             <input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
               placeholder="you@example.com"
-              style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }}
-            />
-          </div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '600', color: '#333' }}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Your password"
-              style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }}
             />
           </div>
 
-          {error && (
-            <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>
-              {error}
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+              placeholder="••••••••"
+            />
+          </div>
 
           <button
             type="submit"
             disabled={loading}
-            style={{ width: '100%', padding: '0.875rem', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
+            className="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white font-semibold py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50"
           >
-            {loading ? 'Logging in...' : '🚀 Log In'}
+            {loading ? 'Signing in...' : 'Sign in with Email'}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', color: '#666', fontSize: '0.875rem' }}>
-          No account yet?{' '}
-          <a href="/auth" style={{ color: '#667eea', fontWeight: '600', textDecoration: 'none' }}>Sign up free</a>
-        </div>
+        <p className="text-center text-gray-600 text-sm mt-6">
+          Don't have an account?{' '}
+          <a href="/auth" className="text-green-600 font-semibold hover:underline">
+            Sign up
+          </a>
+        </p>
       </div>
-    </main>
-  )
+    </div>
+  );
 }
