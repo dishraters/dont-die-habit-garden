@@ -1,0 +1,10 @@
+{
+  "env": {
+    "NEXT_PUBLIC_FIREBASE_API_KEY": "AIzaSyCneQP04ra4z6bQEwpxOVguir9_dCE6crk",
+    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "dontdiehabitgarden.firebaseapp.com",
+    "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "dontdiehabitgarden",
+    "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET": "dontdiehabitgarden.firebasestorage.app",
+    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "575235110627",
+    "NEXT_PUBLIC_FIREBASE_APP_ID": "1:575235110627:web:212516a3153acd320037d6"
+  }
+}
