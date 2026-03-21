@@ -6,6 +6,7 @@ interface PlantCardProps {
   streak: number
   isCompleted: boolean
   onMarkComplete: () => void
+  onOpenFeature?: () => void
 }
 
 export default function PlantCard({
@@ -14,6 +15,7 @@ export default function PlantCard({
   streak,
   isCompleted,
   onMarkComplete,
+  onOpenFeature,
 }: PlantCardProps) {
   const plantStage = getPlantStage(streak)
   const metadata = PLANT_METADATA[habitId as keyof typeof PLANT_METADATA]
@@ -34,8 +36,8 @@ export default function PlantCard({
         borderLeft: `4px solid ${metadata.color}`,
       }}
     >
-      {/* Plant Emoji - Large */}
-      <div className="text-center mb-4">
+      {/* Plant Emoji - Large (Clickable for Meditation/Movements/Stories) */}
+      <div className="text-center mb-4 cursor-pointer" onClick={onOpenFeature}>
         <div className="text-6xl mb-2 transition-transform hover:scale-110">
           {plantStage.emoji}
         </div>
