@@ -15,35 +15,48 @@ export default function PlanningModal({
   onSubmit,
   isLoading,
 }: PlanningModalProps) {
-  const [planText, setPlanText] = useState('');
+  const [bigWin1, setBigWin1] = useState('');
+  const [bigWin2, setBigWin2] = useState('');
+  const [bigWin3, setBigWin3] = useState('');
+  const [otherTask1, setOtherTask1] = useState('');
+  const [otherTask2, setOtherTask2] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = () => {
-    if (!planText.trim()) {
-      setError('Please write your plan for today');
+    const wins = [bigWin1, bigWin2, bigWin3].filter(w => w.trim());
+    const tasks = [otherTask1, otherTask2].filter(t => t.trim());
+
+    if (wins.length === 0 && tasks.length === 0) {
+      setError('Please add at least one goal or task');
       return;
     }
 
-    if (planText.trim().length < 10) {
-      setError('Please write at least 10 characters');
-      return;
-    }
+    const planText = [
+      wins.length > 0 ? `Big Wins: ${wins.join(', ')}` : '',
+      tasks.length > 0 ? `Other Tasks: ${tasks.join(', ')}` : '',
+    ]
+      .filter(Boolean)
+      .join(' | ');
 
     onSubmit(planText);
-    setPlanText('');
+    setBigWin1('');
+    setBigWin2('');
+    setBigWin3('');
+    setOtherTask1('');
+    setOtherTask2('');
     setError('');
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 my-8">
         {/* Header */}
         <div className="text-center mb-4">
           <div className="text-5xl mb-2">📋</div>
           <h2 className="text-2xl font-bold text-gray-800">Daily Plan</h2>
-          <p className="text-gray-600 text-sm mt-1">What are you planning to achieve today?</p>
+          <p className="text-gray-600 text-sm mt-1">What will you accomplish today?</p>
         </div>
 
         {/* Error Message */}
@@ -53,25 +66,77 @@ export default function PlanningModal({
           </div>
         )}
 
-        {/* Text Area */}
-        <textarea
-          value={planText}
-          onChange={(e) => {
-            setPlanText(e.target.value);
-            setError('');
-          }}
-          placeholder="Today I plan to..."
-          className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none resize-none"
-          disabled={isLoading}
-        />
+        {/* Big Wins Section */}
+        <div className="mb-6">
+          <h3 className="font-bold text-gray-800 mb-3">My 3 big wins today will be...</h3>
+          <div className="space-y-2">
+            <input
+              type="text"
+              placeholder="1."
+              value={bigWin1}
+              onChange={(e) => {
+                setBigWin1(e.target.value);
+                setError('');
+              }}
+              className="w-full px-4 py-2 border border-cyan-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none text-sm"
+              disabled={isLoading}
+            />
+            <input
+              type="text"
+              placeholder="2."
+              value={bigWin2}
+              onChange={(e) => {
+                setBigWin2(e.target.value);
+                setError('');
+              }}
+              className="w-full px-4 py-2 border border-cyan-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none text-sm"
+              disabled={isLoading}
+            />
+            <input
+              type="text"
+              placeholder="3."
+              value={bigWin3}
+              onChange={(e) => {
+                setBigWin3(e.target.value);
+                setError('');
+              }}
+              className="w-full px-4 py-2 border border-cyan-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none text-sm"
+              disabled={isLoading}
+            />
+          </div>
+        </div>
 
-        {/* Character Count */}
-        <div className="text-right text-xs text-gray-500 mt-2">
-          {planText.length} characters
+        {/* Other Tasks Section */}
+        <div className="mb-6">
+          <h3 className="font-medium text-gray-700 mb-3">2 other things I'll get done...</h3>
+          <div className="space-y-2">
+            <input
+              type="text"
+              placeholder="Task 1"
+              value={otherTask1}
+              onChange={(e) => {
+                setOtherTask1(e.target.value);
+                setError('');
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none text-sm"
+              disabled={isLoading}
+            />
+            <input
+              type="text"
+              placeholder="Task 2"
+              value={otherTask2}
+              onChange={(e) => {
+                setOtherTask2(e.target.value);
+                setError('');
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none text-sm"
+              disabled={isLoading}
+            />
+          </div>
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3">
           <button
             onClick={onClose}
             disabled={isLoading}
@@ -81,7 +146,7 @@ export default function PlanningModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isLoading || !planText.trim()}
+            disabled={isLoading}
             className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-lg font-semibold hover:bg-cyan-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isLoading ? (
