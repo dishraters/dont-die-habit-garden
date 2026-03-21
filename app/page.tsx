@@ -6,6 +6,7 @@ import AudioPlayer from './components/AudioPlayer'
 import MovementsCarousel from './components/MovementsCarousel'
 import HabitEntryModal from './components/HabitEntryModal'
 import GratitudeModal from './components/GratitudeModal'
+import PlanningModal from './components/PlanningModal'
 import { saveHabitCompletion, loadUserHabits, addDDC } from '@/lib/habitFunctions'
 
 const HABITS = [
@@ -16,7 +17,7 @@ const HABITS = [
   { id: 'lunch', name: 'Lunch', plantName: 'Meadowleaf', color: '#22c55e', requiresModal: true },
   { id: 'dinner', name: 'Dinner', plantName: 'Twilight Bloom', color: '#8b5cf6', requiresModal: true },
   { id: 'sleeptime_stories', name: 'Sleeptime Stories', plantName: 'Moon Vine', color: '#ec4899', requiresModal: true },
-  { id: 'planning', name: 'Planning', plantName: 'Compass Fern', color: '#06b6d4', requiresModal: false },
+  { id: 'planning', name: 'Planning', plantName: 'Compass Fern', color: '#06b6d4', requiresModal: true },
   { id: 'mindful_movements', name: 'Mindful Movements', plantName: 'Breeze Orchid', color: '#10b981', requiresModal: true },
 ]
 
@@ -217,6 +218,19 @@ export default function Home() {
         <MovementsCarousel
           onComplete={() => handleModalComplete('mindful_movements')}
           onClose={() => setOpenModal(null)}
+        />
+      )}
+
+      {/* Planning Modal */}
+      {openModal === 'planning' && (
+        <PlanningModal
+          isOpen={true}
+          onClose={() => setOpenModal(null)}
+          onSubmit={(text) => {
+            doMarkComplete('planning', text)
+            setOpenModal(null)
+          }}
+          isLoading={false}
         />
       )}
 
