@@ -1,28 +1,29 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import PlantCard from './components/PlantCard'
-import AudioPlayer from './components/AudioPlayer'
-import MovementsCarousel from './components/MovementsCarousel'
 import HabitEntryModal from './components/HabitEntryModal'
 import DishRatedModal from './components/DishRatedModal'
 import GratitudeModal from './components/GratitudeModal'
 import PlanningModal from './components/PlanningModal'
-import { saveHabitCompletion, loadUserHabits, addDDC } from '@/lib/habitFunctions'
+import MeditationModal from './components/MeditationModal'
+import SleepModal from './components/SleepModal'
+import StretchingModal from './components/StretchingModal'
+import { saveHabitCompletion, loadUserHabits } from '@/lib/habitFunctions'
 
 const HABITS = [
-  { id: 'gratitude', name: 'Gratitude', plantName: 'Moonbloom', color: '#fbbf24', requiresModal: true },
-  { id: 'meditation', name: 'Meditation', plantName: 'Lotus Seed', color: '#60a5fa', requiresModal: true },
-  { id: 'training', name: 'Training', plantName: 'Iron Fern', color: '#ef4444', requiresModal: true },
-  { id: 'breakfast', name: 'Breakfast', plantName: 'Sunpetal', color: '#f97316', requiresModal: true },
-  { id: 'lunch', name: 'Lunch', plantName: 'Meadowleaf', color: '#22c55e', requiresModal: true },
-  { id: 'dinner', name: 'Dinner', plantName: 'Twilight Bloom', color: '#8b5cf6', requiresModal: true },
-  { id: 'sleeptime_stories', name: 'Sleeptime Stories', plantName: 'Moon Vine', color: '#ec4899', requiresModal: true },
-  { id: 'planning', name: 'Planning', plantName: 'Compass Fern', color: '#06b6d4', requiresModal: true },
-  { id: 'mindful_movements', name: 'Mindful Movements', plantName: 'Breeze Orchid', color: '#10b981', requiresModal: true },
+  { id: 'meditation', name: 'Meditation',  emoji: '🧘', source: 'ddhg' as const,        modal: 'meditation' },
+  { id: 'training',   name: 'Training',    emoji: '💪', source: 'trainlog' as const,     modal: 'training' },
+  { id: 'breakfast',  name: 'Breakfast',   emoji: '🍳', source: 'dishrated' as const,    modal: 'breakfast' },
+  { id: 'lunch',      name: 'Lunch',       emoji: '🥗', source: 'dishrated' as const,    modal: 'lunch' },
+  { id: 'dinner',     name: 'Dinner',      emoji: '🍽️', source: 'dishrated' as const,    modal: 'dinner' },
+  { id: 'planning',   name: 'Planning',    emoji: '📋', source: 'planning' as const,     modal: 'planning' },
+  { id: 'gratitude',  name: 'Gratitude',   emoji: '🙏', source: 'gratitude' as const,    modal: 'gratitude' },
+  { id: 'sleep',      name: 'Sleep',       emoji: '🌙', source: 'ddhg' as const,         modal: 'sleep' },
+  { id: 'stretching', name: 'Stretching',  emoji: '🤸', source: 'ddhg' as const,         modal: 'stretching' },
 ]
 
-const MEAL_HABITS = ['training', 'breakfast', 'lunch', 'dinner']
+const MEAL_MODALS = ['breakfast', 'lunch', 'dinner']
 
 interface User {
   email: string
@@ -30,75 +31,92 @@ interface User {
   id: string
 }
 
+const emptyStreaks = () =>
+  HABITS.reduce<{ [k: string]: number }>((acc, h) => { acc[h.id] = 0; return acc }, {})
+
 export default function Home() {
   const [completedToday, setCompletedToday] = useState<string[]>([])
-  const [ddc, setDdc] = useState(0)
-  const [totalDdc, setTotalDdc] = useState(0)
+  const [todayDDC, setTodayDDC] = useState(0)
+  const [totalDDC, setTotalDDC] = useState(0)
+  const [plantStreak, setPlantStreak] = useState(0)
+  const [streaks, setStreaks] = useState<{ [key: string]: number }>(emptyStreaks())
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
-  const [streaks, setStreaks] = useState<{ [key: string]: number }>({
-    gratitude: 0, meditation: 0, training: 0, breakfast: 0, lunch: 0,
-    dinner: 0, sleeptime_stories: 0, planning: 0, mindful_movements: 0,
-  })
   const [openModal, setOpenModal] = useState<string | null>(null)
 
-  useEffect(() => {
+  const userId = user?.id || 'guest'
+
+  // Load user data from Firestore
+  const refreshData = useCallback(async (uid: string) => {
     try {
-      const stored = localStorage.getItem('ddhg_user')
-      if (stored) {
-        const u = JSON.parse(stored) as User
-        setUser(u)
-        const habits = loadUserHabits(u.id)
-        setCompletedToday(habits.completedToday)
-        setStreaks(prev => ({ ...prev, ...habits.streaks }))
-        setTotalDdc(habits.totalDDC)
-      }
-    } catch {
-      // ignore localStorage errors
+      const habits = await loadUserHabits(uid)
+      setCompletedToday(habits.completedToday)
+      setStreaks(prev => ({ ...emptyStreaks(), ...habits.streaks }))
+      setTotalDDC(habits.totalDDC)
+      setTodayDDC(habits.todayDDC)
+      setPlantStreak(habits.plantStreak)
+    } catch (e) {
+      console.error('Error loading habits:', e)
     }
-    setLoading(false)
   }, [])
 
-  const doMarkComplete = (habitId: string, notes?: string, time?: string) => {
-    if (completedToday.includes(habitId)) return
-    const userId = user?.id || 'guest'
-    saveHabitCompletion(userId, habitId, notes, time)
-    const newCompleted = [...completedToday, habitId]
-    setCompletedToday(newCompleted)
-    const earned = newCompleted.length === 9 ? 100 : 10
-    setDdc(prev => prev + earned)
-    const newTotal = addDDC(userId, earned)
-    setTotalDdc(newTotal)
-  }
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const stored = localStorage.getItem('ddhg_user')
+        if (stored) {
+          const u = JSON.parse(stored) as User
+          setUser(u)
+          await refreshData(u.id)
+        }
+      } catch {
+        // ignore localStorage errors
+      }
+      setLoading(false)
+    }
+    init()
+  }, [refreshData])
 
-  const handleHabitAction = (habitId: string) => {
+  const doMarkComplete = useCallback(async (habitId: string, notes?: string, time?: string) => {
     if (completedToday.includes(habitId)) return
     const habit = HABITS.find(h => h.id === habitId)
-    if (habit?.requiresModal) {
+    const source = habit?.source || 'ddhg'
+
+    // Optimistic UI update
+    setCompletedToday(prev => [...prev, habitId])
+
+    try {
+      await saveHabitCompletion(userId, habitId, notes, time, source)
+      // Refresh to get actual DDC values from Firestore
+      await refreshData(userId)
+    } catch (e) {
+      console.error('Error saving habit:', e)
+      // Revert optimistic update on error
+      setCompletedToday(prev => prev.filter(id => id !== habitId))
+    }
+  }, [completedToday, userId, refreshData])
+
+  const handleHabitAction = (habitId: string) => {
+    if (!completedToday.includes(habitId)) {
       setOpenModal(habitId)
-    } else {
-      doMarkComplete(habitId)
     }
   }
 
-  const handleModalComplete = (habitId: string) => {
-    doMarkComplete(habitId)
-    setOpenModal(null)
-  }
+  const closeModal = () => setOpenModal(null)
 
   const handleLogout = () => {
     localStorage.removeItem('ddhg_user')
     setUser(null)
     setCompletedToday([])
-    setDdc(0)
+    setTodayDDC(0)
+    setTotalDDC(0)
+    setStreaks(emptyStreaks())
   }
-
-  const mealHabit = openModal && MEAL_HABITS.includes(openModal) ? openModal : null
 
   if (loading) {
     return (
       <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'white', fontSize: '1.5rem' }}>🌱 Loading...</div>
+        <div style={{ color: 'white', fontSize: '1.5rem' }}>🌱 Loading your garden...</div>
       </main>
     )
   }
@@ -106,11 +124,12 @@ export default function Home() {
   return (
     <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '1.5rem' }}>
       <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+
         {/* Header */}
         <div style={{ color: 'white', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>🌱 Don't Die Habit Garden</h1>
+              <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>🌱 Don&apos;t Die Habit Garden</h1>
               {user ? (
                 <p style={{ opacity: 0.85, fontSize: '0.9rem' }}>Welcome back, {user.name}!</p>
               ) : (
@@ -142,15 +161,19 @@ export default function Home() {
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
             <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0.75rem 1.25rem' }}>
               <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>🔥 {completedToday.length}/9</div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Today's Habits</div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Today&apos;s Habits</div>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0.75rem 1.25rem' }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>💰 +{ddc}</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>💰 +{todayDDC}</div>
               <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>DDC Earned Today</div>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0.75rem 1.25rem' }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>🪙 {totalDdc}</div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>🪙 {totalDDC}</div>
               <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Total DDC</div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0.75rem 1.25rem' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>🌱 Day {plantStreak}</div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Plant Streak</div>
             </div>
           </div>
         </div>
@@ -162,15 +185,15 @@ export default function Home() {
               key={habit.id}
               habitId={habit.id}
               habitName={habit.name}
-              streak={streaks[habit.id as keyof typeof streaks] || 0}
+              streak={streaks[habit.id] || 0}
               isCompleted={completedToday.includes(habit.id)}
               onMarkComplete={() => handleHabitAction(habit.id)}
-              onOpenFeature={habit.requiresModal ? () => setOpenModal(habit.id) : undefined}
+              onOpenFeature={() => handleHabitAction(habit.id)}
             />
           ))}
         </div>
 
-        {/* CTA Buttons */}
+        {/* Footer CTA */}
         <div style={{ marginTop: '3rem', textAlign: 'center', paddingBottom: '2rem' }}>
           <button style={{ background: '#22c55e', color: 'white', padding: '0.875rem 1.5rem', borderRadius: '10px', fontWeight: 'bold', marginRight: '1rem', fontSize: '1rem' }}>
             📊 View Analytics
@@ -181,83 +204,67 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Gratitude Modal */}
+      {/* === Modals === */}
+
+      {openModal === 'meditation' && (
+        <MeditationModal
+          onComplete={(notes) => { doMarkComplete('meditation', notes); closeModal() }}
+          onClose={closeModal}
+        />
+      )}
+
+      {openModal === 'sleep' && (
+        <SleepModal
+          onComplete={(notes) => { doMarkComplete('sleep', notes); closeModal() }}
+          onClose={closeModal}
+        />
+      )}
+
+      {openModal === 'stretching' && (
+        <StretchingModal
+          onComplete={(notes) => { doMarkComplete('stretching', notes); closeModal() }}
+          onClose={closeModal}
+        />
+      )}
+
       {openModal === 'gratitude' && (
         <GratitudeModal
           isOpen={true}
-          onClose={() => setOpenModal(null)}
-          onSubmit={(text) => {
-            doMarkComplete('gratitude', text)
-            setOpenModal(null)
-          }}
+          onClose={closeModal}
+          onSubmit={(text) => { doMarkComplete('gratitude', text); closeModal() }}
           isLoading={false}
         />
       )}
 
-      {/* Audio Player - Meditation */}
-      {openModal === 'meditation' && (
-        <AudioPlayer
-          mode="meditation"
-          onComplete={() => handleModalComplete('meditation')}
-          onClose={() => setOpenModal(null)}
-        />
-      )}
-
-      {/* Audio Player - Sleeptime Stories */}
-      {openModal === 'sleeptime_stories' && (
-        <AudioPlayer
-          mode="sleep"
-          onComplete={() => handleModalComplete('sleeptime_stories')}
-          onClose={() => setOpenModal(null)}
-        />
-      )}
-
-      {/* Movements Carousel */}
-      {openModal === 'mindful_movements' && (
-        <MovementsCarousel
-          onComplete={() => handleModalComplete('mindful_movements')}
-          onClose={() => setOpenModal(null)}
-        />
-      )}
-
-      {/* Planning Modal */}
       {openModal === 'planning' && (
         <PlanningModal
           isOpen={true}
-          onClose={() => setOpenModal(null)}
-          onSubmit={(text) => {
-            doMarkComplete('planning', text)
-            setOpenModal(null)
-          }}
+          onClose={closeModal}
+          onSubmit={(text) => { doMarkComplete('planning', text); closeModal() }}
           isLoading={false}
         />
       )}
 
-      {/* DishRated Modal (Breakfast, Lunch, Dinner) */}
-      {mealHabit && mealHabit !== 'training' && (
+      {openModal && MEAL_MODALS.includes(openModal) && (
         <DishRatedModal
-          mealType={mealHabit as 'breakfast' | 'lunch' | 'dinner'}
+          mealType={openModal as 'breakfast' | 'lunch' | 'dinner'}
           isOpen={true}
-          onClose={() => setOpenModal(null)}
+          onClose={closeModal}
           onSubmit={(dishName, healthScore, costScore) => {
-            doMarkComplete(mealHabit, `${dishName} (Health: ${healthScore}/10, Cost: ${costScore}/10)`)
-            setOpenModal(null)
+            doMarkComplete(openModal, `${dishName} (Health: ${healthScore}/10, Cost: ${costScore}/10)`)
+            closeModal()
           }}
           isLoading={false}
         />
       )}
 
-      {/* Training Modal (Simple form) */}
       {openModal === 'training' && (
         <HabitEntryModal
           habitId="training"
           habitName="Training"
           color="#ef4444"
-          onSave={(data) => {
-            doMarkComplete('training', data.description, data.time)
-            setOpenModal(null)
-          }}
-          onClose={() => setOpenModal(null)}
+          onSave={(data) => { doMarkComplete('training', data.description, data.time); closeModal() }}
+          onClose={closeModal}
         />
       )}
     </main>
