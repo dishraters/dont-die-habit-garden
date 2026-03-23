@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+function parseStateRedirect(state: string | null) {
+  if (!state) return '/';
+
+  try {
+    const parsed = JSON.parse(decodeURIComponent(state));
+    return typeof parsed?.redirect === 'string' ? parsed.redirect : '/';
+  } catch {
+    return '/';
+  }
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const error = searchParams.get('error');
+  const state = searchParams.get('state');
+  const redirect = parseStateRedirect(state);
 
   if (error) {
     return NextResponse.redirect(new URL(`/login?error=${error}`, request.url));
@@ -14,7 +27,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Exchange code for token
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const redirectUri = `${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/auth/callback`;
@@ -33,20 +45,42 @@ export async function GET(request: NextRequest) {
 
     const tokenData = await tokenResponse.json();
 
-    if (tokenData.error) {
-      return NextResponse.redirect(new URL(`/login?error=${tokenData.error}`, request.url));
+    if (tokenData.error || !tokenData.access_token) {
+      return NextResponse.redirect(new URL(`/login?error=${tokenData.error || 'token_exchange_failed'}`, request.url));
     }
 
-    // Set secure httpOnly cookie with access token
-    const response = NextResponse.redirect(new URL('/', request.url));
-    response.cookies.set('auth_token', tokenData.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: tokenData.expires_in,
+    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+      },
     });
+    const userInfo = await userInfoResponse.json();
 
-    return response;
+    const issueResponse = await fetch(new URL('/api/auth/validate', request.url), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'issue',
+        user: {
+          id: userInfo.id || userInfo.email,
+          email: userInfo.email,
+          name: userInfo.name,
+          picture: userInfo.picture,
+        },
+      }),
+    });
+    const issued = await issueResponse.json();
+
+    if (!issueResponse.ok || !issued?.token || !issued?.user) {
+      return NextResponse.redirect(new URL('/login?error=issue_failed', request.url));
+    }
+
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('token', issued.token);
+    loginUrl.searchParams.set('user', encodeURIComponent(JSON.stringify(issued.user)));
+    loginUrl.searchParams.set('redirect', redirect);
+
+    return NextResponse.redirect(loginUrl);
   } catch (error) {
     console.error('Auth callback error:', error);
     return NextResponse.redirect(new URL('/login?error=server_error', request.url));
