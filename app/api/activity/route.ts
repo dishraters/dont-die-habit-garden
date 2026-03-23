@@ -5,6 +5,8 @@
  * Returns paginated list of recent habit completions across all apps
  */
 
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { collection, getDocs, query, where, orderBy, limit as firestoreLimit, Query } from 'firebase/firestore'
 import { db } from '@/lib/firebase'

@@ -5,6 +5,8 @@
  * Returns top users by total tokens or period earnings
  */
 
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { collection, getDocs, query, orderBy, limit as firestoreLimit, where } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
