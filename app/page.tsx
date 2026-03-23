@@ -99,7 +99,7 @@ export default function Home() {
   const handleHabitAction = (habitId: string) => {
     if (completedToday.includes(habitId)) return
 
-    // External app redirects
+    // External app redirects - open in new tab for logging
     const redirects: { [key: string]: string } = {
       meditation: 'https://habit-garden-iota.vercel.app/meditation',
       gratitude: 'https://habit-garden-iota.vercel.app/gratitude',
@@ -114,8 +114,11 @@ export default function Home() {
     const url = redirects[habitId]
     if (url) {
       window.open(url, '_blank')
-    } else if (habitId === 'stretching') {
-      // Stretching stays as modal (native to DDHG)
+      return
+    }
+    
+    // Only stretching uses modal
+    if (habitId === 'stretching') {
       setOpenModal(habitId)
     }
   }
