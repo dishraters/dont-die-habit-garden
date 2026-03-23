@@ -101,14 +101,14 @@ export default function Home() {
 
     // External app redirects - open in new tab for logging
     const redirects: { [key: string]: string } = {
-      meditation: 'https://habit-garden-iota.vercel.app/meditation',
-      gratitude: 'https://habit-garden-iota.vercel.app/gratitude',
-      planning: 'https://habit-garden-iota.vercel.app/planning',
-      sleep: 'https://habit-garden-iota.vercel.app/sleep',
-      breakfast: 'https://dishrated-k6iw14919-dishraters-projects-15a47ec4.vercel.app/breakfast',
-      lunch: 'https://dishrated-k6iw14919-dishraters-projects-15a47ec4.vercel.app/lunch',
-      dinner: 'https://dishrated-k6iw14919-dishraters-projects-15a47ec4.vercel.app/dinner',
-      training: 'https://trainlog-next.vercel.app/exercise',
+      meditation: 'https://habit-garden-2o0tuc1i0-dishraters-projects-15a47ec4.vercel.app/meditation',
+      gratitude: 'https://habit-garden-2o0tuc1i0-dishraters-projects-15a47ec4.vercel.app/gratitude',
+      planning: 'https://habit-garden-2o0tuc1i0-dishraters-projects-15a47ec4.vercel.app/planning',
+      sleep: 'https://habit-garden-2o0tuc1i0-dishraters-projects-15a47ec4.vercel.app/sleep',
+      breakfast: 'https://dishrated-mm4zyjktn-dishraters-projects-15a47ec4.vercel.app/breakfast',
+      lunch: 'https://dishrated-mm4zyjktn-dishraters-projects-15a47ec4.vercel.app/lunch',
+      dinner: 'https://dishrated-mm4zyjktn-dishraters-projects-15a47ec4.vercel.app/dinner',
+      training: 'https://trainlog-next-gib6lzcol-dishraters-projects-15a47ec4.vercel.app/exercise',
     }
 
     const url = redirects[habitId]
