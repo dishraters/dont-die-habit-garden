@@ -345,7 +345,7 @@ export default function PortfolioPage() {
                           cx="50%"
                           cy="50%"
                           outerRadius={100}
-                          label={({ app, percentage }) => `${app} (${percentage}%)`}
+                          label={({ name, value }: any) => `${name} (${value}%)`}
                         >
                           {appBreakdown.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />

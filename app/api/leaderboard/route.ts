@@ -57,9 +57,9 @@ export async function GET(req: NextRequest) {
         username: user.userId.substring(0, 8) + '***', // Hide full ID
         totalTokens: user.totalTokens ?? 0,
         totalRewardPoints: user.totalRewardPoints ?? 0,
-        streakDay: user.streakDay ?? 0,
+        streakDay: user.plantStreak ?? 0,
         todayRewardPoints: user.todayRewardPoints ?? 0,
-        avatar: user.avatar,
+        avatar: user.plantGrowthStage ? `🌱` : '🌰',
       }
     })
 

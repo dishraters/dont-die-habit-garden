@@ -78,9 +78,9 @@ export async function GET(req: NextRequest) {
       totalTokens: user.totalTokens ?? 0,
       totalRewardPoints: user.totalRewardPoints ?? 0,
       todayRewardPoints: user.todayRewardPoints ?? 0,
-      streakDay: user.streakDay ?? 0,
+      streakDay: user.plantStreak ?? 0,
       goldenSeeds: user.golden_seeds ?? 0,
-      avatar: user.avatar,
+      avatar: user.plantGrowthStage ? `🌱` : '🌰',
     }))
 
     const response: LeaderboardResponse = {
