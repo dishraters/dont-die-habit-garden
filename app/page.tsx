@@ -108,7 +108,7 @@ export default function Home() {
       breakfast: 'https://dishrated.com/breakfast',
       lunch: 'https://dishrated.com/lunch',
       dinner: 'https://dishrated.com/dinner',
-      training: 'https://trainlog-iota.vercel.app/exercise', // Will update after deployment
+      training: 'https://trainlog-next.vercel.app/exercise',
     }
 
     const url = redirects[habitId]
