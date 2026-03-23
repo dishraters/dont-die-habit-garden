@@ -97,7 +97,25 @@ export default function Home() {
   }, [completedToday, userId, refreshData])
 
   const handleHabitAction = (habitId: string) => {
-    if (!completedToday.includes(habitId)) {
+    if (completedToday.includes(habitId)) return
+
+    // External app redirects
+    const redirects: { [key: string]: string } = {
+      meditation: 'https://habit-garden-iota.vercel.app/meditation',
+      gratitude: 'https://habit-garden-iota.vercel.app/gratitude',
+      planning: 'https://habit-garden-iota.vercel.app/planning',
+      sleep: 'https://habit-garden-iota.vercel.app/sleep',
+      breakfast: 'https://dishrated.com/breakfast',
+      lunch: 'https://dishrated.com/lunch',
+      dinner: 'https://dishrated.com/dinner',
+      training: 'https://trainlog-iota.vercel.app/exercise', // Will update after deployment
+    }
+
+    const url = redirects[habitId]
+    if (url) {
+      window.open(url, '_blank')
+    } else if (habitId === 'stretching') {
+      // Stretching stays as modal (native to DDHG)
       setOpenModal(habitId)
     }
   }
