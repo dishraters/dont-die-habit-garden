@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 /**
  * Heartbeat Complete Endpoint - Record habit completion
  *
