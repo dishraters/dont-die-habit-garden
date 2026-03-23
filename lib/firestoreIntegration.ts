@@ -46,6 +46,19 @@ export interface DDHGUser {
   todayCompletedHabits: string[]
   todayDate: string           // YYYY-MM-DD, resets todayCompletedHabits when changed
   todayDDC: number
+  // ===== HEARTBEAT TOKENOMICS v2.0 =====
+  totalTokens: number                          // lifetime total tokens earned
+  totalRewardPoints: number                    // lifetime total RP earned
+  todayRewardPoints: number                    // today's RP earned
+  todayEarnings: {
+    earned_rp: number                          // base RP before multiplier
+    multiplier: number                         // streak multiplier (1.0 - 15.0)
+    rp_after_multiplier: number                // earned_rp * multiplier
+    daily_pool_share: number                   // user's share of daily token pool
+    tokens_awarded: number                     // final tokens from pool distribution
+  }
+  golden_seeds: number                         // count of 30+ day streak achievements
+  lastHeartbeat: string                        // ISO timestamp of last heartbeat
   created_at?: string
   updated_at?: string
 }
@@ -58,9 +71,11 @@ export interface CompletionEvent {
   source: 'habit-garden' | 'dishrated' | 'trainlog' | 'planning' | 'gratitude' | 'ddhg'
   completedAt: string
   ddcEarned: number
-  streakDay: number         // which day of the habit streak this was
+  rp_earned: number                           // RP earned (replaces ddcEarned in v2.0)
+  streakDay: number                           // which day of the habit streak this was
   growthStageChanged: boolean
   milestoneReached?: '7day' | '30day'
+  golden_seed_earned: boolean                 // true if 30-day streak achieved
   notes?: string
   created_at?: string
 }
@@ -122,6 +137,18 @@ export async function initDDHGUser(userId: string): Promise<DDHGUser> {
       todayCompletedHabits: [],
       todayDate: todayStr(),
       todayDDC: 0,
+      totalTokens: data.totalTokens ?? 0,
+      totalRewardPoints: data.totalRewardPoints ?? 0,
+      todayRewardPoints: data.todayRewardPoints ?? 0,
+      todayEarnings: data.todayEarnings ?? {
+        earned_rp: 0,
+        multiplier: 1.0,
+        rp_after_multiplier: 0,
+        daily_pool_share: 0,
+        tokens_awarded: 0,
+      },
+      golden_seeds: data.golden_seeds ?? 0,
+      lastHeartbeat: data.lastHeartbeat ?? '',
       plantStreak: data.plantGrowthStage || 0, // fallback
       lastActivityDate: '',
       ...data,
@@ -141,6 +168,18 @@ export async function initDDHGUser(userId: string): Promise<DDHGUser> {
     todayCompletedHabits: [],
     todayDate: today,
     todayDDC: 0,
+    totalTokens: 0,
+    totalRewardPoints: 0,
+    todayRewardPoints: 0,
+    todayEarnings: {
+      earned_rp: 0,
+      multiplier: 1.0,
+      rp_after_multiplier: 0,
+      daily_pool_share: 0,
+      tokens_awarded: 0,
+    },
+    golden_seeds: 0,
+    lastHeartbeat: '',
   }
 
   const docRef = await addDoc(collection(db, 'ddhg_users'), {
@@ -181,8 +220,10 @@ export async function recordCompletion(
       source,
       completedAt: new Date().toISOString(),
       ddcEarned: 0,
+      rp_earned: 0,
       streakDay: user.habitStreaks?.[habitId] || 0,
       growthStageChanged: false,
+      golden_seed_earned: false,
       notes,
     }
   }
@@ -202,8 +243,9 @@ export async function recordCompletion(
     newHabitStreak = 1
   }
 
-  // --- Calculate tokens ---
-  const { tokens, milestone } = calcTokens(habitId, newHabitStreak)
+  // --- Calculate reward points (RP) ---
+  // NOTE: In v2.0, we award RP instead of tokens. Tokens are awarded via heartbeat distribution.
+  const { tokens: rp_earned, milestone } = calcTokens(habitId, newHabitStreak)
 
   // --- Calculate plant streak ---
   let newPlantStreak = user.plantStreak || 0
@@ -223,11 +265,18 @@ export async function recordCompletion(
   const newGrowthStage = getGrowthStage(newPlantStreak)
   const growthStageChanged = newGrowthStage > oldGrowthStage
 
+  // --- Check for golden seed (30-day streak) ---
+  const goldenSeedEarned = newHabitStreak === 30 && milestone === '30day'
+
   // --- Update user doc ---
   const newTodayCompleted = [...todayCompleted, habitId]
+  const newTodayRP = (freshToday ? 0 : (user.todayRewardPoints || 0)) + rp_earned
+  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updates: Record<string, any> = {
-    totalDDC: user.totalDDC + tokens,
+    totalDDC: user.totalDDC + rp_earned,      // keep DDC for backwards compat
+    totalRewardPoints: (user.totalRewardPoints || 0) + rp_earned,
+    todayRewardPoints: newTodayRP,
     plantGrowthStage: newGrowthStage,
     plantStreak: newPlantStreak,
     lastActivityDate: today,
@@ -235,7 +284,8 @@ export async function recordCompletion(
     habitLastDates: { ...(user.habitLastDates || {}), [habitId]: today },
     todayCompletedHabits: newTodayCompleted,
     todayDate: today,
-    todayDDC: (freshToday ? 0 : (user.todayDDC || 0)) + tokens,
+    todayDDC: (freshToday ? 0 : (user.todayDDC || 0)) + rp_earned,
+    golden_seeds: (user.golden_seeds || 0) + (goldenSeedEarned ? 1 : 0),
     updated_at: serverTimestamp(),
   }
 
@@ -248,10 +298,12 @@ export async function recordCompletion(
     habitName,
     source,
     completedAt: new Date().toISOString(),
-    ddcEarned: tokens,
+    ddcEarned: rp_earned,
+    rp_earned,
     streakDay: newHabitStreak,
     growthStageChanged,
     milestoneReached: milestone,
+    golden_seed_earned: goldenSeedEarned,
     notes,
     created_at: new Date().toISOString(),
   }
