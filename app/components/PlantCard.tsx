@@ -3,6 +3,7 @@ import { getPlantStage, PLANT_METADATA } from '@/lib/plantGraphics'
 interface PlantCardProps {
   habitId: string
   habitName: string
+  totalDDC: number
   streak: number
   isCompleted: boolean
   onMarkComplete: () => void
@@ -12,21 +13,22 @@ interface PlantCardProps {
 export default function PlantCard({
   habitId,
   habitName,
+  totalDDC,
   streak,
   isCompleted,
   onMarkComplete,
   onOpenFeature,
 }: PlantCardProps) {
-  const plantStage = getPlantStage(streak)
+  const plantStage = getPlantStage(totalDDC)
   const metadata = PLANT_METADATA[habitId as keyof typeof PLANT_METADATA]
 
   if (!metadata) return null
 
-  // Progress bar to next milestone
-  const milestones = [7, 30, 60, 365]
-  const nextMilestone = milestones.find((m) => m > streak) || 365
-  const previousMilestone = milestones.filter((m) => m <= streak).pop() || 0
-  const progressToNext = ((streak - previousMilestone) / (nextMilestone - previousMilestone)) * 100
+  // Progress bar to next cumulative token milestone
+  const tokenMilestones = [100, 300, 700, 1200, 2000, 3500, 10000]
+  const nextMilestone = tokenMilestones.find((m) => m > totalDDC) || 10000
+  const previousMilestone = tokenMilestones.filter((m) => m <= totalDDC).pop() || 0
+  const progressToNext = ((totalDDC - previousMilestone) / (nextMilestone - previousMilestone)) * 100
 
   return (
     <div
@@ -51,14 +53,15 @@ export default function PlantCard({
         <p className="text-xs text-gray-500">{metadata.description}</p>
       </div>
 
-      {/* Streak Counter */}
+      {/* Token Counter */}
       <div className="mb-4 text-center">
         <p className="text-lg font-bold">
-          🔥 <span style={{ color: metadata.color }}>{streak}</span> day streak
+          💎 <span style={{ color: metadata.color }}>{totalDDC}</span> total tokens
         </p>
+        <p className="text-xs text-gray-500">🔥 {streak} day streak</p>
       </div>
 
-      {/* Progress Bar to Next Milestone */}
+      {/* Progress Bar to Next Plant Stage */}
       <div className="mb-4">
         <div className="h-2 bg-gray-300 rounded-full overflow-hidden">
           <div
@@ -70,12 +73,13 @@ export default function PlantCard({
           />
         </div>
         <p className="text-xs text-gray-600 mt-1 text-center">
-          {streak < 2 && `${2 - streak} days to Rooted`}
-          {streak >= 2 && streak < 4 && `${4 - streak} days to Sprout`}
-          {streak >= 4 && streak < 7 && `${7 - streak} days to Budding`}
-          {streak >= 7 && streak < 11 && `${11 - streak} days to Blooming`}
-          {streak >= 11 && streak < 16 && `${16 - streak} days to Flourishing`}
-          {streak >= 16 && '🌺 Flourishing!'}
+          {totalDDC < 100 && `${100 - totalDDC} tokens to 🌿 Sprout`}
+          {totalDDC >= 100 && totalDDC < 300 && `${300 - totalDDC} tokens to 🌲 Young Tree`}
+          {totalDDC >= 300 && totalDDC < 700 && `${700 - totalDDC} tokens to 🌳 Mature`}
+          {totalDDC >= 700 && totalDDC < 1200 && `${1200 - totalDDC} tokens to 🌲✨ Thriving`}
+          {totalDDC >= 1200 && totalDDC < 2000 && `${2000 - totalDDC} tokens to 🌴 Flourishing`}
+          {totalDDC >= 2000 && totalDDC < 3500 && `${3500 - totalDDC} tokens to 🌳👑 Monument`}
+          {totalDDC >= 3500 && '🌳👑 Monument achieved!'}
         </p>
       </div>
 

@@ -185,6 +185,7 @@ export default function Home() {
               key={habit.id}
               habitId={habit.id}
               habitName={habit.name}
+              totalDDC={totalDDC}
               streak={streaks[habit.id] || 0}
               isCompleted={completedToday.includes(habit.id)}
               onMarkComplete={() => handleHabitAction(habit.id)}

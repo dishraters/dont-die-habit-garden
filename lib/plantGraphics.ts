@@ -3,26 +3,29 @@ export type GrowthStage = {
   label: string
   emoji: string
   progress: number
+  stage: number
 }
 
-// Plant progression: maps streak count to visual stage
-export const getPlantStage = (streak: number): GrowthStage => {
-  if (streak === 0) return { label: 'Seed',        emoji: '🌱', progress: 0 }
-  if (streak < 2)   return { label: 'Rooted',      emoji: '🌱', progress: (streak / 2) * 100 }
-  if (streak < 4)   return { label: 'Sprout',      emoji: '🌿', progress: ((streak - 2) / 2) * 100 }
-  if (streak < 7)   return { label: 'Leafing',     emoji: '🌿', progress: ((streak - 4) / 3) * 100 }
-  if (streak < 11)  return { label: 'Budding',     emoji: '🌾', progress: ((streak - 7) / 4) * 100 }
-  if (streak < 16)  return { label: 'Blooming',    emoji: '🌸', progress: ((streak - 11) / 5) * 100 }
-  return               { label: 'Flourishing', emoji: '🌺', progress: 100 }
+// Plant progression: maps cumulative tokens to visual stage
+// 7 stages: 0-100 (seed) → 101-300 (sprout) → 301-700 (young tree) → 701-1200 (mature) → 1201-2000 (thriving) → 2001-3500 (flourishing) → 3501+ (monument)
+export const getPlantStage = (totalDDC: number): GrowthStage => {
+  if (totalDDC < 100)   return { label: 'Seed',         emoji: '🌱', progress: (totalDDC / 100) * 100, stage: 1 }
+  if (totalDDC < 300)   return { label: 'Sprout',       emoji: '🌿', progress: ((totalDDC - 100) / 200) * 100, stage: 2 }
+  if (totalDDC < 700)   return { label: 'Young Tree',   emoji: '🌲', progress: ((totalDDC - 300) / 400) * 100, stage: 3 }
+  if (totalDDC < 1200)  return { label: 'Mature Tree',  emoji: '🌳', progress: ((totalDDC - 700) / 500) * 100, stage: 4 }
+  if (totalDDC < 2000)  return { label: 'Thriving',     emoji: '🌲✨', progress: ((totalDDC - 1200) / 800) * 100, stage: 5 }
+  if (totalDDC < 3500)  return { label: 'Flourishing',  emoji: '🌴', progress: ((totalDDC - 2000) / 1500) * 100, stage: 6 }
+  return                 { label: 'Monument',       emoji: '🌳👑', progress: 100, stage: 7 }
 }
 
-// Milestone rewards
-export const getMilestoneReward = (streak: number) => {
-  if (streak === 2)  return { reward: 100,  message: '🌱 Rooted! +100 DDC bonus' }
-  if (streak === 4)  return { reward: 250,  message: '🌿 Sprouting! +250 DDC bonus' }
-  if (streak === 7)  return { reward: 500,  message: '🎉 One week! +500 DDC bonus' }
-  if (streak === 11) return { reward: 1000, message: '🌸 Blooming! +1000 DDC bonus' }
-  if (streak === 16) return { reward: 2000, message: '🌺 Flourishing! +2000 DDC bonus' }
+// Milestone rewards based on cumulative tokens
+export const getMilestoneReward = (totalDDC: number) => {
+  if (totalDDC === 100)  return { reward: 50,   message: '🌱 Seed → Sprout! +50 bonus tokens' }
+  if (totalDDC === 300)  return { reward: 100,  message: '🌿 Sprout → Young Tree! +100 bonus tokens' }
+  if (totalDDC === 700)  return { reward: 200,  message: '🌲 Young Tree → Mature! +200 bonus tokens' }
+  if (totalDDC === 1200) return { reward: 400,  message: '🌳 Mature → Thriving! +400 bonus tokens' }
+  if (totalDDC === 2000) return { reward: 800,  message: '🌲✨ Thriving → Flourishing! +800 bonus tokens' }
+  if (totalDDC === 3500) return { reward: 1600, message: '🌴 Flourishing → Monument! +1600 bonus tokens' }
   return null
 }
 
