@@ -105,9 +105,9 @@ export default function Home() {
       gratitude: 'https://habit-garden-iota.vercel.app/gratitude',
       planning: 'https://habit-garden-iota.vercel.app/planning',
       sleep: 'https://habit-garden-iota.vercel.app/sleep',
-      breakfast: 'https://dishrated.com/breakfast',
-      lunch: 'https://dishrated.com/lunch',
-      dinner: 'https://dishrated.com/dinner',
+      breakfast: 'https://dishrated-k6iw14919-dishraters-projects-15a47ec4.vercel.app/breakfast',
+      lunch: 'https://dishrated-k6iw14919-dishraters-projects-15a47ec4.vercel.app/lunch',
+      dinner: 'https://dishrated-k6iw14919-dishraters-projects-15a47ec4.vercel.app/dinner',
       training: 'https://trainlog-next.vercel.app/exercise',
     }
 
