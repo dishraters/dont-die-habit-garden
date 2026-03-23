@@ -9,6 +9,10 @@ import PlanningModal from './components/PlanningModal'
 import MeditationModal from './components/MeditationModal'
 import SleepModal from './components/SleepModal'
 import StretchingModal from './components/StretchingModal'
+import DailyPieChart from './components/DailyPieChart'
+import EarningsDashboard from './components/EarningsDashboard'
+import StreakMultiplier from './components/StreakMultiplier'
+import GoldenHatTracker from './components/GoldenHatTracker'
 import { saveHabitCompletion, loadUserHabits } from '@/lib/habitFunctions'
 
 const HABITS = [
@@ -198,6 +202,30 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* === Phase 3 Dashboard Components === */}
+
+        {/* Earnings Dashboard (Full Width) */}
+        {user && (
+          <div style={{ marginBottom: '2rem' }}>
+            <EarningsDashboard userId={user.id} />
+          </div>
+        )}
+
+        {/* 2-Col Grid: DailyPieChart + StreakMultiplier */}
+        {user && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <DailyPieChart userId={user.id} />
+            <StreakMultiplier userId={user.id} />
+          </div>
+        )}
+
+        {/* Golden Hat Tracker */}
+        {user && (
+          <div style={{ marginBottom: '2rem' }}>
+            <GoldenHatTracker userId={user.id} />
+          </div>
+        )}
 
         {/* Habits Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
