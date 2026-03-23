@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
 import PlantCard from './components/PlantCard'
 import HabitEntryModal from './components/HabitEntryModal'
 import DishRatedModal from './components/DishRatedModal'
@@ -14,96 +15,187 @@ import EarningsDashboard from './components/EarningsDashboard'
 import StreakMultiplier from './components/StreakMultiplier'
 import GoldenHatTracker from './components/GoldenHatTracker'
 import { saveHabitCompletion, loadUserHabits } from '@/lib/habitFunctions'
+import { useAuth } from '@/lib/auth-context'
 
 const HABITS = [
-  { id: 'meditation', name: 'Meditation',  emoji: '🧘', source: 'ddhg' as const,        modal: 'meditation' },
-  { id: 'training',   name: 'Training',    emoji: '💪', source: 'trainlog' as const,     modal: 'training' },
-  { id: 'breakfast',  name: 'Breakfast',   emoji: '🍳', source: 'dishrated' as const,    modal: 'breakfast' },
-  { id: 'lunch',      name: 'Lunch',       emoji: '🥗', source: 'dishrated' as const,    modal: 'lunch' },
-  { id: 'dinner',     name: 'Dinner',      emoji: '🍽️', source: 'dishrated' as const,    modal: 'dinner' },
-  { id: 'planning',   name: 'Planning',    emoji: '📋', source: 'planning' as const,     modal: 'planning' },
-  { id: 'gratitude',  name: 'Gratitude',   emoji: '🙏', source: 'gratitude' as const,    modal: 'gratitude' },
-  { id: 'sleep',      name: 'Sleep',       emoji: '🌙', source: 'ddhg' as const,         modal: 'sleep' },
-  { id: 'stretching', name: 'Stretching',  emoji: '🤸', source: 'ddhg' as const,         modal: 'stretching' },
+  { id: 'meditation', name: 'Meditation', emoji: '🧘', source: 'ddhg' as const },
+  { id: 'training', name: 'Training', emoji: '💪', source: 'trainlog' as const },
+  { id: 'breakfast', name: 'Breakfast', emoji: '🍳', source: 'dishrated' as const },
+  { id: 'lunch', name: 'Lunch', emoji: '🥗', source: 'dishrated' as const },
+  { id: 'dinner', name: 'Dinner', emoji: '🍽️', source: 'dishrated' as const },
+  { id: 'planning', name: 'Planning', emoji: '📋', source: 'planning' as const },
+  { id: 'gratitude', name: 'Gratitude', emoji: '🙏', source: 'gratitude' as const },
+  { id: 'sleep', name: 'Sleep', emoji: '🌙', source: 'ddhg' as const },
+  { id: 'stretching', name: 'Stretching', emoji: '🤸', source: 'ddhg' as const },
 ]
 
 const MEAL_MODALS = ['breakfast', 'lunch', 'dinner']
 
-interface User {
-  email: string
-  name: string
-  id: string
+const emptyStreaks = () =>
+  HABITS.reduce<{ [k: string]: number }>((acc, habit) => {
+    acc[habit.id] = 0
+    return acc
+  }, {})
+
+function LandingPage() {
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-100">
+      <section className="px-4 py-20">
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="mb-6 text-6xl">🌱</div>
+          <h1 className="mb-6 text-4xl font-bold leading-tight text-green-900 md:text-5xl">
+            A calm daily ritual for meditation, journaling, gratitude, and planning
+          </h1>
+          <p className="mb-8 text-xl leading-relaxed text-green-700">
+            Don&apos;t Die Habit Garden turns your wellness routine into a gentle plant-themed rhythm. Keep your core DDHG habits, earn consistency, and come back each day to grow something steady.
+          </p>
+          <div className="flex flex-col justify-center gap-4 sm:flex-row">
+            <Link href="/auth" className="rounded-2xl bg-green-500 px-8 py-4 text-lg font-bold text-white transition hover:bg-green-600">
+              Start growing →
+            </Link>
+            <Link href="/login" className="rounded-2xl border border-green-200 bg-white px-8 py-4 text-lg font-bold text-green-700 transition hover:bg-green-50">
+              Log in
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white px-4 py-16">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="mb-12 text-center text-2xl font-bold text-green-900">What DDHG helps you do</h2>
+          <div className="grid gap-8 md:grid-cols-3">
+            <div className="text-center">
+              <div className="mb-4 text-5xl">🧘</div>
+              <h3 className="mb-2 text-lg font-bold text-green-900">Stay grounded</h3>
+              <p className="text-gray-600">Keep meditation, sleep, and stretching in one place so your baseline habits feel calm instead of chaotic.</p>
+            </div>
+            <div className="text-center">
+              <div className="mb-4 text-5xl">🙏</div>
+              <h3 className="mb-2 text-lg font-bold text-green-900">Reflect daily</h3>
+              <p className="text-gray-600">Journaling and gratitude live alongside your actions, so reflection becomes part of the practice.</p>
+            </div>
+            <div className="text-center">
+              <div className="mb-4 text-5xl">📋</div>
+              <h3 className="mb-2 text-lg font-bold text-green-900">Plan with clarity</h3>
+              <p className="text-gray-600">Map your day, check off meals and training, and build momentum through repetition.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-gradient-to-b from-green-50 to-emerald-50 px-4 py-16">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="mb-12 text-center text-2xl font-bold text-green-900">Why it feels different</h2>
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="rounded-3xl bg-white p-6 shadow-sm">
+              <div className="mb-3 text-3xl">🌿</div>
+              <h3 className="mb-2 text-lg font-bold text-green-900">Plant-first design</h3>
+              <p className="text-gray-600">The UI borrows Habit Garden&apos;s clean, leafy feel so the experience is lighter and more inviting.</p>
+            </div>
+            <div className="rounded-3xl bg-white p-6 shadow-sm">
+              <div className="mb-3 text-3xl">🪙</div>
+              <h3 className="mb-2 text-lg font-bold text-green-900">DDHG-specific rewards</h3>
+              <p className="text-gray-600">You keep the DDHG streaks, DDC tracking, and connected features without the old broken auth flow.</p>
+            </div>
+            <div className="rounded-3xl bg-white p-6 shadow-sm">
+              <div className="mb-3 text-3xl">✨</div>
+              <h3 className="mb-2 text-lg font-bold text-green-900">Simple sign-in</h3>
+              <p className="text-gray-600">Firebase email/password and Google auth replace the custom JWT path with a proven client flow.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-20">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="mb-4 text-3xl font-bold text-green-900">Build your ritual, one day at a time</h2>
+          <p className="mb-8 text-green-700">Open the app, log your habits, and let consistency compound.</p>
+          <Link href="/auth" className="inline-block rounded-2xl bg-green-500 px-10 py-4 text-lg font-bold text-white transition hover:bg-green-600">
+            Open DDHG →
+          </Link>
+        </div>
+      </section>
+    </main>
+  )
 }
 
-const emptyStreaks = () =>
-  HABITS.reduce<{ [k: string]: number }>((acc, h) => { acc[h.id] = 0; return acc }, {})
-
 export default function Home() {
+  const { user, loading, signOut } = useAuth()
   const [completedToday, setCompletedToday] = useState<string[]>([])
   const [todayDDC, setTodayDDC] = useState(0)
   const [totalDDC, setTotalDDC] = useState(0)
   const [plantStreak, setPlantStreak] = useState(0)
   const [streaks, setStreaks] = useState<{ [key: string]: number }>(emptyStreaks())
-  const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<User | null>(null)
+  const [appLoading, setAppLoading] = useState(true)
   const [openModal, setOpenModal] = useState<string | null>(null)
 
-  const userId = user?.id || 'guest'
-
-  // Load user data from Firestore
-  const refreshData = useCallback(async (uid: string) => {
-    try {
-      const habits = await loadUserHabits(uid)
-      setCompletedToday(habits.completedToday)
-      setStreaks(prev => ({ ...emptyStreaks(), ...habits.streaks }))
-      setTotalDDC(habits.totalDDC)
-      setTodayDDC(habits.todayDDC)
-      setPlantStreak(habits.plantStreak)
-    } catch (e) {
-      console.error('Error loading habits:', e)
-    }
-  }, [])
+  const userId = user?.uid || 'guest'
+  const firstName = useMemo(() => user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'Gardener', [user])
 
   useEffect(() => {
     const init = async () => {
-      try {
-        const stored = localStorage.getItem('ddhg_user')
-        if (stored) {
-          const u = JSON.parse(stored) as User
-          setUser(u)
-          await refreshData(u.id)
-        }
-      } catch {
-        // ignore localStorage errors
+      if (!user) {
+        setCompletedToday([])
+        setTodayDDC(0)
+        setTotalDDC(0)
+        setPlantStreak(0)
+        setStreaks(emptyStreaks())
+        setAppLoading(false)
+        return
       }
-      setLoading(false)
-    }
-    init()
-  }, [refreshData])
 
-  const doMarkComplete = useCallback(async (habitId: string, notes?: string, time?: string) => {
+      setAppLoading(true)
+      try {
+        const habits = await loadUserHabits(user.uid)
+        setCompletedToday(habits.completedToday)
+        setStreaks({ ...emptyStreaks(), ...habits.streaks })
+        setTotalDDC(habits.totalDDC)
+        setTodayDDC(habits.todayDDC)
+        setPlantStreak(habits.plantStreak)
+      } catch (error) {
+        console.error('Error loading habits:', error)
+      } finally {
+        setAppLoading(false)
+      }
+    }
+
+    if (!loading) {
+      init()
+    }
+  }, [loading, user])
+
+  const refreshData = async (uid: string) => {
+    try {
+      const habits = await loadUserHabits(uid)
+      setCompletedToday(habits.completedToday)
+      setStreaks({ ...emptyStreaks(), ...habits.streaks })
+      setTotalDDC(habits.totalDDC)
+      setTodayDDC(habits.todayDDC)
+      setPlantStreak(habits.plantStreak)
+    } catch (error) {
+      console.error('Error loading habits:', error)
+    }
+  }
+
+  const doMarkComplete = async (habitId: string, notes?: string, time?: string) => {
     if (completedToday.includes(habitId)) return
-    const habit = HABITS.find(h => h.id === habitId)
+    const habit = HABITS.find((item) => item.id === habitId)
     const source = habit?.source || 'ddhg'
 
-    // Optimistic UI update
-    setCompletedToday(prev => [...prev, habitId])
+    setCompletedToday((prev) => [...prev, habitId])
 
     try {
       await saveHabitCompletion(userId, habitId, notes, time, source)
-      // Refresh to get actual DDC values from Firestore
       await refreshData(userId)
-    } catch (e) {
-      console.error('Error saving habit:', e)
-      // Revert optimistic update on error
-      setCompletedToday(prev => prev.filter(id => id !== habitId))
+    } catch (error) {
+      console.error('Error saving habit:', error)
+      setCompletedToday((prev) => prev.filter((id) => id !== habitId))
     }
-  }, [completedToday, userId, refreshData])
+  }
 
   const handleHabitAction = (habitId: string) => {
     if (completedToday.includes(habitId)) return
 
-    // External app redirects - open in new tab for logging
     const redirects: { [key: string]: string } = {
       meditation: 'https://habit-garden-2o0tuc1i0-dishraters-projects-15a47ec4.vercel.app/meditation',
       gratitude: 'https://habit-garden-2o0tuc1i0-dishraters-projects-15a47ec4.vercel.app/gratitude',
@@ -120,8 +212,7 @@ export default function Home() {
       window.open(url, '_blank')
       return
     }
-    
-    // Only stretching uses modal
+
     if (habitId === 'stretching') {
       setOpenModal(habitId)
     }
@@ -129,170 +220,142 @@ export default function Home() {
 
   const closeModal = () => setOpenModal(null)
 
-  const handleLogout = () => {
-    localStorage.removeItem('ddhg_user')
-    setUser(null)
-    setCompletedToday([])
-    setTodayDDC(0)
-    setTotalDDC(0)
-    setStreaks(emptyStreaks())
+  const handleLogout = async () => {
+    await signOut()
+    window.location.href = '/'
   }
 
-  if (loading) {
+  if (loading || (user && appLoading)) {
     return (
-      <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'white', fontSize: '1.5rem' }}>🌱 Loading your garden...</div>
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-50 to-emerald-100 px-4">
+        <div className="rounded-3xl border border-green-100 bg-white px-8 py-6 text-lg font-medium text-green-800 shadow-lg shadow-green-100/60">
+          🌱 Loading your garden...
+        </div>
       </main>
     )
   }
 
+  if (!user) {
+    return <LandingPage />
+  }
+
   return (
-    <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '1.5rem' }}>
-      <div style={{ maxWidth: '960px', margin: '0 auto' }}>
-
-        {/* Header */}
-        <div style={{ color: 'white', marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+    <main className="min-h-screen bg-gradient-to-b from-green-50 via-emerald-50 to-white px-4 py-8">
+      <div className="mx-auto max-w-6xl">
+        <section className="mb-8 rounded-[2rem] border border-green-100 bg-white/90 p-8 shadow-xl shadow-green-100/70">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>🌱 Don&apos;t Die Habit Garden</h1>
-              {user ? (
-                <p style={{ opacity: 0.85, fontSize: '0.9rem' }}>Welcome back, {user.name}!</p>
-              ) : (
-                <p style={{ opacity: 0.85, fontSize: '0.9rem' }}>
-                  Guest mode —{' '}
-                  <a href="/login" style={{ color: '#fbbf24', textDecoration: 'none', fontWeight: '600' }}>Log in</a>
-                  {' '}to save progress
-                </p>
-              )}
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-700">
+                <span>🌿</span>
+                <span>Your daily ritual</span>
+              </div>
+              <h1 className="text-3xl font-bold text-green-900 md:text-4xl">Welcome back, {firstName}</h1>
+              <p className="mt-3 max-w-2xl text-green-700">
+                Keep your DDHG habits alive today: meditation, meals, planning, gratitude, sleep, stretching, and training.
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              {user ? (
-                <button
-                  onClick={handleLogout}
-                  style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}
-                >
-                  Log out
-                </button>
-              ) : (
-                <>
-                  <a href="/login" style={{ padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.2)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem' }}>Log in</a>
-                  <a href="/auth" style={{ padding: '0.5rem 1rem', background: '#fbbf24', color: '#333', borderRadius: '8px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: '600' }}>Sign up</a>
-                </>
-              )}
+            <div className="flex flex-wrap gap-3">
+              <button onClick={handleLogout} className="rounded-2xl border border-green-200 px-4 py-3 font-medium text-green-700 transition hover:bg-green-50">
+                Sign out
+              </button>
+              <Link href="/how-it-works" className="rounded-2xl bg-green-500 px-4 py-3 font-medium text-white transition hover:bg-green-600">
+                Learn the system
+              </Link>
             </div>
           </div>
 
-          {/* Stats Bar */}
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
-            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0.75rem 1.25rem' }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>🔥 {completedToday.length}/9</div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Today&apos;s Habits</div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-3xl bg-green-50 p-5">
+              <div className="text-3xl font-bold text-green-900">🔥 {completedToday.length}/9</div>
+              <div className="mt-1 text-sm text-green-700">Today&apos;s habits completed</div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0.75rem 1.25rem' }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>💰 +{todayDDC}</div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>DDC Earned Today</div>
+            <div className="rounded-3xl bg-emerald-50 p-5">
+              <div className="text-3xl font-bold text-green-900">💰 +{todayDDC}</div>
+              <div className="mt-1 text-sm text-green-700">DDC earned today</div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0.75rem 1.25rem' }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>🪙 {totalDDC}</div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Total DDC</div>
+            <div className="rounded-3xl bg-lime-50 p-5">
+              <div className="text-3xl font-bold text-green-900">🪙 {totalDDC}</div>
+              <div className="mt-1 text-sm text-green-700">Total DDC</div>
             </div>
-            <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '10px', padding: '0.75rem 1.25rem' }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>🌱 Day {plantStreak}</div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Plant Streak</div>
+            <div className="rounded-3xl bg-teal-50 p-5">
+              <div className="text-3xl font-bold text-green-900">🌱 Day {plantStreak}</div>
+              <div className="mt-1 text-sm text-green-700">Plant streak</div>
             </div>
           </div>
+        </section>
+
+        <div className="mb-8 rounded-[2rem] border border-green-100 bg-white p-6 shadow-lg shadow-green-100/50">
+          <h2 className="mb-2 text-2xl font-bold text-green-900">Your garden dashboard</h2>
+          <p className="text-green-700">DDHG features are unchanged — they&apos;re just wrapped in a calmer Habit Garden-style shell.</p>
         </div>
 
-        {/* === Phase 3 Dashboard Components === */}
-
-        {/* Earnings Dashboard (Full Width) */}
-        {user && (
-          <div style={{ marginBottom: '2rem' }}>
-            <EarningsDashboard userId={user.id} />
-          </div>
-        )}
-
-        {/* 2-Col Grid: DailyPieChart + StreakMultiplier */}
-        {user && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-            <DailyPieChart userId={user.id} />
-            <StreakMultiplier userId={user.id} />
-          </div>
-        )}
-
-        {/* Golden Hat Tracker */}
-        {user && (
-          <div style={{ marginBottom: '2rem' }}>
-            <GoldenHatTracker userId={user.id} />
-          </div>
-        )}
-
-        {/* Habits Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem' }}>
-          {HABITS.map((habit) => (
-            <PlantCard
-              key={habit.id}
-              habitId={habit.id}
-              habitName={habit.name}
-              totalDDC={totalDDC}
-              streak={streaks[habit.id] || 0}
-              isCompleted={completedToday.includes(habit.id)}
-              onMarkComplete={() => handleHabitAction(habit.id)}
-              onOpenFeature={() => handleHabitAction(habit.id)}
-            />
-          ))}
+        <div className="mb-8">
+          <EarningsDashboard userId={userId} />
         </div>
 
-        {/* Footer CTA */}
-        <div style={{ marginTop: '3rem', textAlign: 'center', paddingBottom: '2rem' }}>
-          <button style={{ background: '#22c55e', color: 'white', padding: '0.875rem 1.5rem', borderRadius: '10px', fontWeight: 'bold', marginRight: '1rem', fontSize: '1rem' }}>
-            📊 View Analytics
-          </button>
-          <button style={{ background: '#ec4899', color: 'white', padding: '0.875rem 1.5rem', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem' }}>
-            💰 Book Coaching
-          </button>
+        <div className="mb-8 grid gap-6 xl:grid-cols-2">
+          <DailyPieChart userId={userId} />
+          <StreakMultiplier userId={userId} />
         </div>
+
+        <div className="mb-8">
+          <GoldenHatTracker userId={userId} />
+        </div>
+
+        <section className="mb-8 rounded-[2rem] border border-green-100 bg-white p-6 shadow-lg shadow-green-100/50">
+          <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-green-900">Today&apos;s habits</h2>
+              <p className="text-green-700">Open a linked tool or complete the habit directly to keep your streak growing.</p>
+            </div>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {HABITS.map((habit) => (
+              <PlantCard
+                key={habit.id}
+                habitId={habit.id}
+                habitName={habit.name}
+                totalDDC={totalDDC}
+                streak={streaks[habit.id] || 0}
+                isCompleted={completedToday.includes(habit.id)}
+                onMarkComplete={() => handleHabitAction(habit.id)}
+                onOpenFeature={() => handleHabitAction(habit.id)}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="pb-10 text-center">
+          <div className="inline-flex flex-col gap-3 sm:flex-row">
+            <Link href="/activity" className="rounded-2xl border border-green-200 bg-white px-6 py-3 font-semibold text-green-700 transition hover:bg-green-50">
+              📊 View activity
+            </Link>
+            <Link href="/store" className="rounded-2xl bg-green-500 px-6 py-3 font-semibold text-white transition hover:bg-green-600">
+              🌱 Visit store
+            </Link>
+          </div>
+        </section>
       </div>
 
-      {/* === Modals === */}
-
       {openModal === 'meditation' && (
-        <MeditationModal
-          onComplete={(notes) => { doMarkComplete('meditation', notes); closeModal() }}
-          onClose={closeModal}
-        />
+        <MeditationModal onComplete={(notes) => { doMarkComplete('meditation', notes); closeModal() }} onClose={closeModal} />
       )}
 
       {openModal === 'sleep' && (
-        <SleepModal
-          onComplete={(notes) => { doMarkComplete('sleep', notes); closeModal() }}
-          onClose={closeModal}
-        />
+        <SleepModal onComplete={(notes) => { doMarkComplete('sleep', notes); closeModal() }} onClose={closeModal} />
       )}
 
       {openModal === 'stretching' && (
-        <StretchingModal
-          onComplete={(notes) => { doMarkComplete('stretching', notes); closeModal() }}
-          onClose={closeModal}
-        />
+        <StretchingModal onComplete={(notes) => { doMarkComplete('stretching', notes); closeModal() }} onClose={closeModal} />
       )}
 
       {openModal === 'gratitude' && (
-        <GratitudeModal
-          isOpen={true}
-          onClose={closeModal}
-          onSubmit={(text) => { doMarkComplete('gratitude', text); closeModal() }}
-          isLoading={false}
-        />
+        <GratitudeModal isOpen={true} onClose={closeModal} onSubmit={(text) => { doMarkComplete('gratitude', text); closeModal() }} isLoading={false} />
       )}
 
       {openModal === 'planning' && (
-        <PlanningModal
-          isOpen={true}
-          onClose={closeModal}
-          onSubmit={(text) => { doMarkComplete('planning', text); closeModal() }}
-          isLoading={false}
-        />
+        <PlanningModal isOpen={true} onClose={closeModal} onSubmit={(text) => { doMarkComplete('planning', text); closeModal() }} isLoading={false} />
       )}
 
       {openModal && MEAL_MODALS.includes(openModal) && (
@@ -312,7 +375,7 @@ export default function Home() {
         <HabitEntryModal
           habitId="training"
           habitName="Training"
-          color="#ef4444"
+          color="#22c55e"
           onSave={(data) => { doMarkComplete('training', data.description, data.time); closeModal() }}
           onClose={closeModal}
         />

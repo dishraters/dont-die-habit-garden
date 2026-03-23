@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Navbar from './components/Navbar'
+import { AuthProvider } from '@/lib/auth-context'
 
 export const metadata: Metadata = {
-  title: 'Don\'t Die Habit Garden',
-  description: '9 habits to build a healthier life. Earn DDC tokens for consistency.',
+  title: "Don't Die Habit Garden",
+  description: 'A calm daily ritual for meditation, journaling, gratitude, planning, and consistency.',
 }
 
 export default function RootLayout({
@@ -15,8 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Navbar />
-        {children}
+        <AuthProvider>
+          <Navbar />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

@@ -1,100 +1,143 @@
 'use client'
 
-import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/lib/auth-context'
+
+function getFriendlyError(message?: string) {
+  if (!message) return 'Something went wrong. Please try again.'
+  if (message.includes('email-already-in-use')) return 'That email is already in use.'
+  if (message.includes('weak-password')) return 'Password should be at least 6 characters.'
+  if (message.includes('invalid-email')) return 'Please enter a valid email address.'
+  return message
+}
 
 export default function SignupPage() {
   const router = useRouter()
+  const { user, loading, signUp, signInWithGoogle } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/')
+    }
+  }, [loading, router, user])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
     if (!email || !password || !name) {
-      setError('All fields required')
+      setError('All fields are required.')
       return
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+
+    setSubmitting(true)
+    const result = await signUp(email, password, name)
+    setSubmitting(false)
+
+    if (result.error) {
+      setError(getFriendlyError(result.error.message))
       return
     }
-    setLoading(true)
-    // Mock signup - store in localStorage
-    try {
-      const user = { email, name, id: 'user-' + Date.now() }
-      localStorage.setItem('ddhg_user', JSON.stringify(user))
-      router.push('/')
-    } catch {
-      setError('Signup failed. Please try again.')
-    } finally {
-      setLoading(false)
+
+    router.push('/')
+  }
+
+  const handleGoogle = async () => {
+    setSubmitting(true)
+    const result = await signInWithGoogle()
+    setSubmitting(false)
+
+    if (result.error) {
+      setError(getFriendlyError(result.error.message))
+      return
     }
+
+    router.push('/')
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '400px', boxShadow: '0 4px 24px rgba(0,0,0,0.2)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '3rem' }}>🌱</div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#333' }}>Create Account</h1>
-          <p style={{ color: '#666', fontSize: '0.875rem' }}>Start your Don't Die Habit Garden</p>
+    <main className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-100 px-4 py-16">
+      <div className="mx-auto max-w-md rounded-3xl border border-green-100 bg-white p-8 shadow-xl shadow-green-100/60">
+        <div className="mb-8 text-center">
+          <div className="mb-4 text-5xl">🌱</div>
+          <h1 className="text-3xl font-bold text-green-900">Create your garden</h1>
+          <p className="mt-2 text-sm text-green-700">Start a calmer ritual for meditation, journaling, gratitude, and planning.</p>
         </div>
 
-        <form onSubmit={handleSignup}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '600', color: '#333' }}>Name</label>
+        {error && <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+        <button
+          onClick={handleGoogle}
+          disabled={submitting}
+          className="mb-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-green-200 px-4 py-3 font-medium text-gray-700 transition hover:bg-green-50 disabled:opacity-60"
+        >
+          <span>✨</span>
+          Continue with Google
+        </button>
+
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-green-100" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase tracking-[0.2em] text-green-600">
+            <span className="bg-white px-3">or use email</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSignup} className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-green-900">Name</label>
             <input
               type="text"
               value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your name"
-              style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Sam"
+              className="w-full rounded-2xl border border-green-200 px-4 py-3 outline-none transition focus:border-green-400 focus:ring-2 focus:ring-green-100"
             />
           </div>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '600', color: '#333' }}>Email</label>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-green-900">Email</label>
             <input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }}
+              className="w-full rounded-2xl border border-green-200 px-4 py-3 outline-none transition focus:border-green-400 focus:ring-2 focus:ring-green-100"
             />
           </div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.25rem', fontWeight: '600', color: '#333' }}>Password</label>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-green-900">Password</label>
             <input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Min 6 characters"
-              style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              className="w-full rounded-2xl border border-green-200 px-4 py-3 outline-none transition focus:border-green-400 focus:ring-2 focus:ring-green-100"
             />
           </div>
 
-          {error && (
-            <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>
-              {error}
-            </div>
-          )}
-
           <button
             type="submit"
-            disabled={loading}
-            style={{ width: '100%', padding: '0.875rem', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
+            disabled={submitting}
+            className="w-full rounded-2xl bg-green-500 px-4 py-3 font-semibold text-white transition hover:bg-green-600 disabled:opacity-60"
           >
-            {loading ? 'Creating account...' : '🌱 Create Account'}
+            {submitting ? 'Planting...' : 'Create account'}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', color: '#666', fontSize: '0.875rem' }}>
+        <p className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <a href="/login" style={{ color: '#667eea', fontWeight: '600', textDecoration: 'none' }}>Log in</a>
-        </div>
+          <Link href="/login" className="font-semibold text-green-700 hover:text-green-800">
+            Log in
+          </Link>
+        </p>
       </div>
     </main>
   )
