@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { saveHabitCompletion, initDDHGUser } from '@/lib/firestoreIntegration'
+import { recordCompletion, initDDHGUser } from '@/lib/firestoreIntegration'
 import { calculateStreakMultiplier, getHeartbeatState, getUserExpectedTokens } from '@/lib/heartbeatEngine'
 
 interface CompleteRequest {
@@ -78,24 +78,42 @@ export async function POST(req: NextRequest) {
     const rp_earned = body.rp_earned ?? DEFAULT_RP_VALUES[habitType] ?? 1
 
     // Calculate streak and multiplier
-    const streakDay = user.streakDay ?? 0
+    const streakDay = user.plantStreak ?? 0
     const multiplier = calculateStreakMultiplier(streakDay)
     const finalRP = rp_earned * multiplier
 
-    // Record completion in Firestore (will update todayRewardPoints, streakDay, etc)
-    await saveHabitCompletion(
+    // Map habit type to a display name for the completion record
+    const habitNameMap: { [key: string]: string } = {
+      meditation: 'Meditation',
+      sleeptime_stories: 'Sleeptime Stories',
+      mindful_movements: 'Mindful Movements',
+      gratitude: 'Gratitude',
+      planning: 'Planning',
+      training: 'Training',
+      breakfast: 'Breakfast',
+      lunch: 'Lunch',
+      dinner: 'Dinner',
+      hydration: 'Hydration',
+      reading: 'Reading',
+    }
+
+    const habitName = habitNameMap[habitType] || habitType
+    const source = sourceApp === 'ddhg' ? 'ddhg' : (sourceApp as any)
+
+    // Record completion in Firestore (will update todayRewardPoints, plantStreak, etc)
+    await recordCompletion(
       userId,
       habitType,
-      notes,
-      undefined,
-      sourceApp
+      habitName,
+      source,
+      notes
     )
 
     // Refresh user to get updated values
     const updatedUser = await initDDHGUser(userId)
     const todayRP = updatedUser.todayRewardPoints ?? 0
     const totalRP = updatedUser.totalRewardPoints ?? 0
-    const newStreakDay = updatedUser.streakDay ?? 0
+    const newStreakDay = updatedUser.plantStreak ?? 0
     const newMultiplier = calculateStreakMultiplier(newStreakDay)
 
     // Get network state for user's share
@@ -108,7 +126,7 @@ export async function POST(req: NextRequest) {
     const estimatedTokens = (userShare / 100) * poolSize
 
     // Check if golden seed awarded (30-day streak)
-    const goldenSeedAwarded = newStreakDay >= 30 && updatedUser.golden_seeds !== undefined
+    const goldenSeedAwarded = newStreakDay >= 30
 
     const response: CompleteResponse = {
       success: true,

@@ -1,15 +1,13 @@
 /**
- * TrainLog webhook
- * Receives exercise completions from TrainLog app.
- *
+ * TrainLog Webhook - Redirect to Heartbeat Complete
+ * 
  * POST /api/webhooks/trainlog
  * Body: { userId, exerciseName, duration?, intensityPoints?, notes? }
- *
- * Requires duration >= 20 min OR intensityPoints >= 5 (per HABITS_SPEC).
+ * 
+ * Proxies to /api/heartbeat/complete with standard schema
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { recordCompletion } from '@/lib/firestoreIntegration'
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,15 +21,13 @@ export async function POST(request: NextRequest) {
     const durationNum = Number(duration) || 0
     const intensityNum = Number(intensityPoints) || 0
 
-    // Minimum requirement gate (per HABITS_SPEC)
-    if (duration !== undefined && intensityPoints !== undefined) {
-      if (durationNum < 20 && intensityNum < 5) {
-        return NextResponse.json({
-          success: false,
-          message: `Exercise not counted: ${durationNum} min / ${intensityNum} intensity is below minimum (20 min OR 5 intensity points)`,
-          ddcEarned: 0,
-        })
-      }
+    // Minimum requirement gate
+    if (durationNum < 20 && intensityNum < 5) {
+      return NextResponse.json({
+        success: false,
+        message: `Exercise not counted: below minimum (20 min OR 5 intensity points)`,
+        estimated_tokens: 0,
+      })
     }
 
     const notesStr = notes || [
@@ -40,21 +36,32 @@ export async function POST(request: NextRequest) {
       intensityNum ? `Intensity: ${intensityNum}` : null,
     ].filter(Boolean).join(' — ')
 
-    const event = await recordCompletion(
-      userId,
-      'training',
-      'Training',
-      'trainlog',
-      notesStr
-    )
+    // Proxy to /api/heartbeat/complete with standard schema
+    const response = await fetch('https://dont-die-habit-garden.vercel.app/api/heartbeat/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        habitType: 'training',
+        userId,
+        rp_earned: 5,
+        sourceApp: 'trainlog',
+        notes: notesStr,
+        timestamp: new Date().toISOString(),
+      }),
+    })
+
+    const heartbeatResponse = await response.json()
 
     return NextResponse.json({
-      success: true,
-      event,
-      message: `✅ Training logged: ${exerciseName} → plant grew!`,
+      success: heartbeatResponse.success,
+      message: `✅ Training logged: ${exerciseName}`,
+      ...heartbeatResponse,
     })
   } catch (error) {
-    console.error('TrainLog webhook error:', error)
-    return NextResponse.json({ error: 'Webhook processing failed', details: String(error) }, { status: 500 })
+    console.error('[webhooks/trainlog]', error)
+    return NextResponse.json(
+      { success: false, error: 'Webhook processing failed', details: String(error) },
+      { status: 500 }
+    )
   }
 }

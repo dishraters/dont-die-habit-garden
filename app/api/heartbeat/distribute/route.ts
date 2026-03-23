@@ -16,7 +16,7 @@ import {
   getHeartbeatState,
   DistributionResult,
   HeartbeatState,
-} from '../../../lib/heartbeatEngine'
+} from '@/lib/heartbeatEngine'
 
 export async function POST(req: NextRequest) {
   try {

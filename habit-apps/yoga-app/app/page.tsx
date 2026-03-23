@@ -1,58 +1,52 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-const DDHG_API = process.env.NEXT_PUBLIC_DDHG_API || 'http://localhost:3000'
+const DDHG_API = process.env.NEXT_PUBLIC_DDHG_API || 'https://dont-die-habit-garden.vercel.app'
 const USER_ID = typeof window !== 'undefined' ? localStorage.getItem('yoga_user_id') || 'user-' + Math.random().toString(36).substr(2, 9) : 'guest'
 
-interface Pose {
-  id: number
-  name: string
-  emoji: string
-  description: string
-  duration: string
+interface BalanceData {
+  totalTokens: number
+  loading: boolean
 }
 
-const POSES: Pose[] = [
-  { id: 1, name: 'Child\'s Pose', emoji: '🙏', description: 'Relaxing forward bend', duration: '1-2 min' },
-  { id: 2, name: 'Downward Dog', emoji: '🐕', description: 'Full body stretch', duration: '1-2 min' },
-  { id: 3, name: 'Warrior I', emoji: '⚔️', description: 'Strength & balance', duration: '1 min each side' },
-  { id: 4, name: 'Tree Pose', emoji: '🌳', description: 'Balance & focus', duration: '1 min each side' },
-  { id: 5, name: 'Corpse Pose', emoji: '☠️', description: 'Final relaxation', duration: '3-5 min' },
-]
+interface Session {
+  duration: number
+  type: string
+}
 
 export default function YogaApp() {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [completedPoses, setCompletedPoses] = useState<number[]>([])
+  const [selectedDuration, setSelectedDuration] = useState<number | null>(null)
+  const [selectedType, setSelectedType] = useState<string>('hatha')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+  const [balance, setBalance] = useState<BalanceData>({ totalTokens: 0, loading: true })
 
-  const currentPose = POSES[currentIndex]
-  const isCompleted = completedPoses.includes(currentIndex)
-
-  const togglePose = () => {
-    if (completedPoses.includes(currentIndex)) {
-      setCompletedPoses(prev => prev.filter(i => i !== currentIndex))
-    } else {
-      setCompletedPoses(prev => [...prev, currentIndex])
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const response = await fetch(
+          `${DDHG_API}/api/heartbeat/status?userId=${encodeURIComponent(USER_ID)}`,
+          { credentials: 'include' }
+        )
+        if (response.ok) {
+          const data = await response.json()
+          setBalance({
+            totalTokens: data.user_info?.totalTokens ?? 0,
+            loading: false,
+          })
+        }
+      } catch (err) {
+        console.error('Balance fetch error:', err)
+        setBalance({ totalTokens: 0, loading: false })
+      }
     }
-  }
+    fetchBalance()
+  }, [])
 
-  const nextPose = () => {
-    if (currentIndex < POSES.length - 1) {
-      setCurrentIndex(prev => prev + 1)
-    }
-  }
-
-  const prevPose = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1)
-    }
-  }
-
-  const completeSequence = async () => {
-    if (completedPoses.length === 0) {
-      setFeedback({ type: 'error', message: 'Complete at least one pose first' })
+  const completeSession = async () => {
+    if (!selectedDuration) {
+      setFeedback({ type: 'error', message: 'Select a duration first' })
       return
     }
 
@@ -61,173 +55,128 @@ export default function YogaApp() {
       const response = await fetch(`${DDHG_API}/api/heartbeat/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          habitType: 'mindful_movements',
+          habitType: 'yoga',
           userId: USER_ID,
           sourceApp: 'yoga-app',
-          rp_earned: 2
+          rp_earned: 3
         })
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to submit yoga completion')
+      if (response.ok) {
+        const result = await response.json()
+        const tokens = result.estimated_tokens || 0.11
+        setFeedback({ type: 'success', message: `🤸 Yoga complete! +3 RP earned (est. ${tokens.toFixed(2)} DDHG)` })
+        setSelectedDuration(null)
+        setTimeout(() => setFeedback(null), 4000)
       }
-
-      setFeedback({ type: 'success', message: `🧘 Yoga sequence complete! +2 RP earned` })
-      setCompletedPoses([])
-      setCurrentIndex(0)
-      setTimeout(() => setFeedback(null), 3000)
     } catch (error) {
       console.error('Error:', error)
-      setFeedback({ type: 'error', message: 'Failed to log sequence. Check console.' })
+      setFeedback({ type: 'error', message: 'Failed to log yoga session' })
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <div style={{ background: 'white', borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '100%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
-        <h1 style={{ textAlign: 'center', fontSize: '2rem', marginBottom: '0.5rem' }}>🧘 Yoga Sequence</h1>
-        <p style={{ textAlign: 'center', color: '#666', marginBottom: '2rem', fontSize: '0.9rem' }}>
-          Move mindfully through 5 poses
-        </p>
-
-        {/* Progress */}
-        <div style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <p style={{ fontWeight: 'bold', color: '#333' }}>Pose {currentIndex + 1} of {POSES.length}</p>
-            <p style={{ color: '#999', fontSize: '0.9rem' }}>{completedPoses.length} completed</p>
-          </div>
-          <div style={{ background: '#f0f0f0', borderRadius: '10px', height: '8px', overflow: 'hidden' }}>
-            <div style={{ background: '#667eea', height: '100%', width: `${((currentIndex + 1) / POSES.length) * 100}%`, transition: 'width 0.3s' }} />
+    <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', display: 'flex', flexDirection: 'column' }}>
+      <header style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
+        <div style={{ maxWidth: '500px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ fontSize: '1.5rem', color: 'white', margin: 0 }}>🤸 Yoga</h1>
+          <div style={{ background: 'rgba(255,255,255,0.2)', padding: '0.5rem 1rem', borderRadius: '20px', color: 'white', fontSize: '0.9rem', fontWeight: 'bold' }}>
+            {balance.loading ? '...' : `💰 ${balance.totalTokens.toFixed(2)} DDHG`}
           </div>
         </div>
+      </header>
 
-        {/* Current Pose */}
-        <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '15px', padding: '2rem', color: 'white', marginBottom: '2rem', textAlign: 'center' }}>
-          <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>{currentPose.emoji}</div>
-          <h2 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>{currentPose.name}</h2>
-          <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{currentPose.description}</p>
-          <p style={{ opacity: 0.9, fontSize: '0.95rem' }}>Duration: {currentPose.duration}</p>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+        <div style={{ background: 'white', borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '100%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
+          <p style={{ textAlign: 'center', color: '#666', marginBottom: '2rem' }}>
+            Stretch, balance, and breathe
+          </p>
+
+          <div style={{ marginBottom: '2rem' }}>
+            <label style={{ display: 'block', marginBottom: '1rem', fontWeight: 'bold', color: '#333' }}>
+              Select Yoga Style
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+              {['Hatha', 'Vinyasa', 'Yin', 'Power'].map(style => (
+                <button
+                  key={style}
+                  onClick={() => setSelectedType(style.toLowerCase())}
+                  style={{
+                    padding: '0.75rem',
+                    background: selectedType === style.toLowerCase() ? '#f5576c' : '#f8f8f8',
+                    color: selectedType === style.toLowerCase() ? 'white' : '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {style}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '2rem' }}>
+            <label style={{ display: 'block', marginBottom: '1rem', fontWeight: 'bold', color: '#333' }}>
+              Session Duration
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+              {[15, 20, 30, 45].map(min => (
+                <button
+                  key={min}
+                  onClick={() => setSelectedDuration(min)}
+                  style={{
+                    padding: '1rem',
+                    background: selectedDuration === min ? '#f5576c' : '#f8f8f8',
+                    color: selectedDuration === min ? 'white' : '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {min} min
+                </button>
+              ))}
+            </div>
+          </div>
 
           <button
-            onClick={togglePose}
+            onClick={completeSession}
+            disabled={!selectedDuration || isSubmitting}
             style={{
-              marginTop: '1.5rem',
-              padding: '0.75rem 1.5rem',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              borderRadius: '10px',
-              border: 'none',
-              background: isCompleted ? '#4CAF50' : 'rgba(255,255,255,0.2)',
+              width: '100%',
+              padding: '1.25rem',
+              background: selectedDuration ? '#22c55e' : '#ccc',
               color: 'white',
-              cursor: 'pointer',
-              transition: 'all 0.3s'
-            }}
-          >
-            {isCompleted ? '✅ Pose Complete' : '⏱ Hold Pose'}
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-          <button
-            onClick={prevPose}
-            disabled={currentIndex === 0}
-            style={{
-              flex: 1,
-              padding: '1rem',
-              fontSize: '1rem',
-              fontWeight: 'bold',
+              border: 'none',
               borderRadius: '10px',
-              border: '1px solid #ddd',
-              background: currentIndex === 0 ? '#f0f0f0' : 'white',
-              cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
-              opacity: currentIndex === 0 ? 0.5 : 1
-            }}
-          >
-            ← Previous
-          </button>
-          <button
-            onClick={nextPose}
-            disabled={currentIndex === POSES.length - 1}
-            style={{
-              flex: 1,
-              padding: '1rem',
-              fontSize: '1rem',
               fontWeight: 'bold',
-              borderRadius: '10px',
-              border: '1px solid #ddd',
-              background: currentIndex === POSES.length - 1 ? '#f0f0f0' : 'white',
-              cursor: currentIndex === POSES.length - 1 ? 'not-allowed' : 'pointer',
-              opacity: currentIndex === POSES.length - 1 ? 0.5 : 1
+              cursor: selectedDuration ? 'pointer' : 'not-allowed',
+              fontSize: '1.1rem',
+              marginBottom: '1rem'
             }}
           >
-            Next →
+            {isSubmitting ? '⏳ Submitting...' : '✅ Complete Session'}
           </button>
+
+          {feedback && (
+            <div style={{
+              padding: '1rem',
+              borderRadius: '10px',
+              background: feedback.type === 'success' ? '#d4edda' : '#f8d7da',
+              color: feedback.type === 'success' ? '#155724' : '#721c24',
+              textAlign: 'center'
+            }}>
+              {feedback.message}
+            </div>
+          )}
         </div>
-
-        {/* Pose List */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', color: '#333' }}>Sequence</h3>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {POSES.map((pose, idx) => (
-              <button
-                key={pose.id}
-                onClick={() => setCurrentIndex(idx)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '20px',
-                  border: idx === currentIndex ? '2px solid #667eea' : '1px solid #ddd',
-                  background: completedPoses.includes(idx) ? '#4CAF50' : idx === currentIndex ? '#667eea' : 'white',
-                  color: completedPoses.includes(idx) || idx === currentIndex ? 'white' : '#333',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  fontWeight: 'bold'
-                }}
-              >
-                {pose.emoji}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Complete Button */}
-        <button
-          onClick={completeSequence}
-          disabled={isSubmitting || completedPoses.length === 0}
-          style={{
-            width: '100%',
-            padding: '1.25rem',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            borderRadius: '10px',
-            border: 'none',
-            background: completedPoses.length === 0 ? '#ccc' : '#22c55e',
-            color: 'white',
-            cursor: completedPoses.length === 0 ? 'not-allowed' : 'pointer',
-            opacity: completedPoses.length === 0 ? 0.6 : 1,
-            transition: 'all 0.3s'
-          }}
-        >
-          {isSubmitting ? '⏳ Submitting...' : '✅ Complete Sequence'}
-        </button>
-
-        {/* Feedback */}
-        {feedback && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '1rem',
-            borderRadius: '10px',
-            background: feedback.type === 'success' ? '#d4edda' : '#f8d7da',
-            color: feedback.type === 'success' ? '#155724' : '#721c24',
-            textAlign: 'center',
-            fontSize: '0.95rem'
-          }}>
-            {feedback.message}
-          </div>
-        )}
       </div>
     </main>
   )

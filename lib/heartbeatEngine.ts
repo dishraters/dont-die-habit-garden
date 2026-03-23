@@ -247,3 +247,26 @@ export async function getUserExpectedTokens(userId: string): Promise<number> {
   const expected_tokens = (user_daily_rp / state.total_network_rp) * state.total_pool
   return expected_tokens
 }
+
+/**
+ * Calculate jackpot bonus based on ad revenue (future feature)
+ * Currently returns 0, but can be extended when ad integration is ready
+ * @param adRevenueAmount - total ad revenue collected
+ * @returns jackpot amount to add to daily pool
+ */
+export function calculateJackpot(adRevenueAmount: number): number {
+  // MVP: No ad jackpot yet
+  // Future: adRevenueAmount * 0.1 (10% of ad revenue goes to jackpot)
+  return 0
+}
+
+/**
+ * Calculate user's RP based on habits completed
+ * This is a reference function; actual RP calculation happens during habit completion
+ * @param habitRP - sum of all RP earned from habit completions today
+ * @param streakMultiplier - current streak multiplier
+ * @returns total RP after multiplier applied
+ */
+export function calculateUserRP(habitRP: number, streakMultiplier: number): number {
+  return habitRP * streakMultiplier
+}

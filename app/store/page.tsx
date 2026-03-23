@@ -1,260 +1,205 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
 
-interface StoreItem {
-  id: string
-  name: string
-  description: string
-  price: number
-  app: string
-  icon: string
-  category: 'premium' | 'subscription' | 'tools' | 'cosmetic'
-}
+const PLACEHOLDER_ITEMS = [
+  { id: 1, title: 'Premium Avatar', price: '500 tokens', icon: '👤' },
+  { id: 2, title: 'Custom Theme', price: '1000 tokens', icon: '🎨' },
+  { id: 3, title: 'Exclusive Badge', price: '750 tokens', icon: '🏅' },
+  { id: 4, title: 'Streak Booster', price: '250 tokens', icon: '🔥' },
+  { id: 5, title: 'Golden Hat Pack', price: '2000 tokens', icon: '👑' },
+  { id: 6, title: 'Sound Pack', price: '300 tokens', icon: '🎵' },
+]
 
 export default function StorePage() {
-  const router = useRouter()
-  const [userId, setUserId] = useState<string>('')
-  const [loading, setLoading] = useState(true)
-  const [balance, setBalance] = useState(0)
-
-  // Get user ID on mount
-  useEffect(() => {
-    const getUID = async () => {
-      try {
-        const auth = (globalThis as any).firebase?.auth
-        const uid = auth?.currentUser?.uid || localStorage.getItem('firebaseUid')
-        
-        if (uid) {
-          setUserId(uid)
-          // Fetch balance
-          const response = await fetch(
-            `/api/heartbeat/status?userId=${encodeURIComponent(uid)}`,
-            { credentials: 'include' }
-          )
-          if (response.ok) {
-            const data = await response.json()
-            setBalance(data.user_info?.totalTokens ?? 0)
-          }
-        } else {
-          router.push('/auth')
-        }
-      } catch (e) {
-        console.error('Auth error:', e)
-        router.push('/auth')
-      }
-    }
-    
-    getUID()
-    setLoading(false)
-  }, [router])
-
-  const storeItems: StoreItem[] = [
-    {
-      id: '1',
-      name: 'Premium Meal Plans',
-      description: 'Personalized nutrition plans curated for your goals',
-      price: 50,
-      app: 'Dishrated',
-      icon: '🥗',
-      category: 'premium',
-    },
-    {
-      id: '2',
-      name: 'Ad-Free Experience',
-      description: 'Remove all ads across all apps',
-      price: 100,
-      app: 'All Apps',
-      icon: '✨',
-      category: 'subscription',
-    },
-    {
-      id: '3',
-      name: 'Premium Plant Themes',
-      description: 'Unlock exclusive garden themes & decorations',
-      price: 30,
-      app: 'Habit Garden',
-      icon: '🌸',
-      category: 'cosmetic',
-    },
-    {
-      id: '4',
-      name: 'Personal Habit Coach (AI)',
-      description: 'Get AI-powered insights and personalized habit recommendations',
-      price: 100,
-      app: 'Habit Garden',
-      icon: '🤖',
-      category: 'premium',
-    },
-    {
-      id: '5',
-      name: 'Form Guide Videos',
-      description: 'Expert-led exercise form guides and corrections',
-      price: 40,
-      app: 'TrainLog',
-      icon: '🎥',
-      category: 'premium',
-    },
-    {
-      id: '6',
-      name: 'Monthly Training Plans',
-      description: 'Structured workout plans from certified trainers',
-      price: 75,
-      app: 'TrainLog',
-      icon: '📋',
-      category: 'premium',
-    },
-    {
-      id: '7',
-      name: 'Advanced Analytics',
-      description: 'Deep insights into your fitness and health trends',
-      price: 50,
-      app: 'TrainLog',
-      icon: '📊',
-      category: 'tools',
-    },
-    {
-      id: '8',
-      name: 'Exclusive Guided Meditations',
-      description: 'Premium collection of guided meditations from world-renowned teachers',
-      price: 20,
-      app: 'Meditation App',
-      icon: '🧘',
-      category: 'premium',
-    },
-  ]
-
-  const categories = ['premium', 'subscription', 'tools', 'cosmetic'] as const
-
-  if (!userId) {
-    return <div className="p-8">Redirecting to auth...</div>
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center text-gray-600">Loading store...</div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-indigo-100">
-        <div className="max-w-6xl mx-auto px-6 py-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">🏪 DDHG Store</h1>
-              <p className="text-gray-600 text-sm mt-1">Spend your tokens on premium features and tools</p>
-            </div>
-            <button
-              onClick={() => router.push('/')}
-              className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
-            >
+      <div className="border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 md:px-8 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <Link href="/" className="text-gray-600 hover:text-gray-900 flex items-center gap-2">
               ← Back
-            </button>
+            </Link>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">🛍️ Token Store</h1>
+            <div className="w-12"></div>
           </div>
 
-          {/* Balance Bar */}
-          <div className="flex items-center gap-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg p-4">
-            <span className="text-2xl">💰</span>
-            <div>
-              <p className="text-sm opacity-90">Your Balance</p>
-              <p className="text-2xl font-bold">{balance.toFixed(2)} DDHG</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 py-12">
-        {/* COMING SOON Banner */}
-        <div className="mb-12 p-8 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl text-center">
-          <div className="text-5xl mb-4">🚀</div>
-          <h2 className="text-2xl font-bold mb-2">Store Coming Soon!</h2>
-          <p className="text-sm opacity-90 max-w-2xl mx-auto">
-            We're building an amazing marketplace where you can spend your DDHG tokens on premium features, 
-            exclusive content, and more. Check back soon!
+          <p className="text-gray-600 max-w-2xl">
+            Spend your hard-earned tokens on exclusive items, themes, and perks. New items coming soon!
           </p>
         </div>
+      </div>
 
-        {/* Product Preview */}
-        <h2 className="text-2xl font-bold text-gray-900 mb-8">🎁 Available Soon</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {storeItems.map(item => (
-            <div
-              key={item.id}
-              className="bg-white rounded-xl shadow-lg p-6 border-2 border-gray-100 opacity-75"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="text-4xl">{item.icon}</div>
-                <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                  {item.app}
-                </span>
-              </div>
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-12">
+        {/* Coming Soon Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-8 border-2 border-yellow-200 mb-12 text-center"
+        >
+          <p className="text-6xl mb-4">🚀</p>
+          <h2 className="text-2xl font-bold text-yellow-900 mb-2">Coming Soon!</h2>
+          <p className="text-yellow-800 max-w-2xl mx-auto">
+            The Token Store is currently under development. We're working on curating amazing items for you to spend
+            your tokens on. Check back soon!
+          </p>
+        </motion.div>
 
-              <h3 className="text-lg font-bold text-gray-900 mb-2">{item.name}</h3>
-              <p className="text-gray-600 text-sm mb-4">{item.description}</p>
-
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold text-indigo-600">{item.price}</span>
-                  <span className="text-xs text-gray-500">DDHG</span>
-                </div>
+        {/* Preview Grid (Disabled) */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">Preview of Coming Items</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {PLACEHOLDER_ITEMS.map((item, index) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-white rounded-lg p-6 border border-gray-200 shadow-md hover:shadow-lg transition opacity-60 cursor-not-allowed"
+              >
+                <div className="text-5xl mb-4 text-center">{item.icon}</div>
+                <h3 className="text-lg font-bold text-gray-900 text-center mb-2">{item.title}</h3>
+                <p className="text-center text-sm text-gray-600 mb-4">{item.price}</p>
                 <button
                   disabled
-                  className="px-4 py-2 bg-gray-200 text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed"
+                  className="w-full bg-gray-300 text-gray-600 font-semibold py-2 px-4 rounded-lg cursor-not-allowed"
                 >
                   Coming Soon
                 </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Info Section */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg p-6 text-center">
-            <div className="text-3xl mb-3">💳</div>
-            <h3 className="font-bold text-gray-900 mb-2">Flexible Spending</h3>
-            <p className="text-sm text-gray-600">
-              Use your DDHG tokens on whatever you want — no restrictions
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 text-center">
-            <div className="text-3xl mb-3">🎯</div>
-            <h3 className="font-bold text-gray-900 mb-2">Real Value</h3>
-            <p className="text-sm text-gray-600">
-              Every purchase supports your health and habit journey
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 text-center">
-            <div className="text-3xl mb-3">🌟</div>
-            <h3 className="font-bold text-gray-900 mb-2">Exclusive Items</h3>
-            <p className="text-sm text-gray-600">
-              Premium content and features only available for DDHG holders
-            </p>
+              </motion.div>
+            ))}
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="mt-12 text-center p-8 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl">
-          <p className="text-gray-700 mb-4">
-            In the meantime, keep earning DDHG by completing habits across all apps!
+        {/* Information Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+            <h3 className="font-bold text-blue-900 mb-3">💡 What to Expect</h3>
+            <ul className="text-sm text-blue-800 space-y-2">
+              <li>✓ Exclusive avatars and profile customizations</li>
+              <li>✓ Custom app themes and color schemes</li>
+              <li>✓ Rare badges and achievement unlocks</li>
+              <li>✓ Streak boosters and multiplier items</li>
+              <li>✓ Sound packs and notification customizations</li>
+              <li>✓ Limited-edition seasonal items</li>
+            </ul>
+          </div>
+
+          <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+            <h3 className="font-bold text-green-900 mb-3">🎯 How to Earn Tokens</h3>
+            <ul className="text-sm text-green-800 space-y-2">
+              <li>🌱 Complete habits across 9+ apps</li>
+              <li>🔥 Build streaks for multiplier bonuses</li>
+              <li>👑 Reach 30-day streaks for golden seeds</li>
+              <li>🏆 Climb the leaderboard for rewards</li>
+              <li>⭐ Participate in daily challenges</li>
+              <li>💰 Earn tokens from heartbeat distributions</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Call to Action */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-gradient-to-r from-pink-600 to-pink-700 rounded-lg p-8 text-white text-center shadow-lg"
+        >
+          <h3 className="text-2xl font-bold mb-4">Start Earning Tokens Today!</h3>
+          <p className="mb-6 max-w-2xl mx-auto">
+            Complete habits in any of our apps and watch your token balance grow. The more you do, the more you earn!
           </p>
-          <button
-            onClick={() => router.push('/')}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-bold hover:shadow-lg transition-shadow"
-          >
-            Back to Dashboard
-          </button>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Link
+              href="/portfolio"
+              className="px-6 py-3 bg-white text-pink-600 font-semibold rounded-lg hover:bg-gray-100 transition"
+            >
+              View Your Balance
+            </Link>
+            <Link
+              href="/"
+              className="px-6 py-3 bg-pink-800 text-white font-semibold rounded-lg hover:bg-pink-900 transition border-2 border-white"
+            >
+              Go to Dashboard
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* FAQ Section */}
+      <div className="bg-gray-100 mt-16">
+        <div className="max-w-6xl mx-auto px-4 md:px-8 py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8">FAQ</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              {
+                q: 'When will the store launch?',
+                a: 'The Token Store is launching in Q2 2026 with a curated selection of digital items and customizations.',
+              },
+              {
+                q: 'Can I refund purchases?',
+                a: 'Digital items are non-refundable, but we guarantee satisfaction with every purchase.',
+              },
+              {
+                q: 'Will items be exclusive?',
+                a: 'Yes! Many items will be limited-edition or seasonal, so collect them while they last.',
+              },
+              {
+                q: 'How much will items cost?',
+                a: 'Items range from 100 to 5,000 tokens depending on rarity and exclusivity.',
+              },
+              {
+                q: 'Can I trade tokens with other users?',
+                a: 'Token trading is not currently supported. Tokens are personal and non-transferable.',
+              },
+              {
+                q: 'Will there be free items?',
+                a: 'Absolutely! Certain free cosmetics and badges will be available to all users.',
+              },
+            ].map((faq, idx) => (
+              <div key={idx} className="bg-white rounded-lg p-6 border border-gray-200">
+                <h4 className="font-bold text-gray-900 mb-2">{faq.q}</h4>
+                <p className="text-sm text-gray-700">{faq.a}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Navigation Footer */}
+      <div className="border-t border-gray-200 mt-12 pt-8 pb-8 bg-white">
+        <div className="max-w-6xl mx-auto px-4 md:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Link
+              href="/portfolio"
+              className="p-4 bg-gray-50 rounded-lg text-center hover:bg-gray-100 transition font-semibold text-gray-900 border border-gray-200"
+            >
+              📊 Portfolio
+            </Link>
+            <Link
+              href="/leaderboard"
+              className="p-4 bg-gray-50 rounded-lg text-center hover:bg-gray-100 transition font-semibold text-gray-900 border border-gray-200"
+            >
+              🏆 Leaderboard
+            </Link>
+            <Link
+              href="/activity"
+              className="p-4 bg-gray-50 rounded-lg text-center hover:bg-gray-100 transition font-semibold text-gray-900 border border-gray-200"
+            >
+              📝 Activity
+            </Link>
+            <Link
+              href="/store"
+              className="p-4 bg-pink-50 rounded-lg text-center hover:bg-pink-100 transition font-semibold text-pink-900 border border-pink-200"
+            >
+              🛍️ Store
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
