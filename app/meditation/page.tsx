@@ -1,26 +1,24 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useSimpleAuth } from '../lib/simple-auth-context'
 
 export default function MeditationPage() {
-  const { user, loading, signOut } = useSimpleAuth()
-  const router = useRouter()
   const [completedToday, setCompletedToday] = useState<Set<string>>(new Set())
+  const [userName, setUserName] = useState('Guest')
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
+    // Load saved data from localStorage
+    const saved = localStorage.getItem('ddhg_completed')
+    const savedName = localStorage.getItem('ddhg_name')
+    if (saved) {
+      setCompletedToday(new Set(JSON.parse(saved)))
     }
-  }, [user, loading, router])
+    if (savedName) {
+      setUserName(savedName)
+    }
+  }, [])
 
-  const handleLogout = async () => {
-    await signOut()
-    router.push('/')
-  }
-
-  const toggleHabit = (habitId: string) => {
+  const handleToggleHabit = (habitId: string) => {
     const updated = new Set(completedToday)
     if (updated.has(habitId)) {
       updated.delete(habitId)
@@ -28,6 +26,7 @@ export default function MeditationPage() {
       updated.add(habitId)
     }
     setCompletedToday(updated)
+    localStorage.setItem('ddhg_completed', JSON.stringify(Array.from(updated)))
   }
 
   const habits = [
@@ -38,21 +37,6 @@ export default function MeditationPage() {
     { id: 'meals', name: 'Meals', emoji: '🍳', color: 'from-yellow-300 to-amber-500' },
     { id: 'sleep', name: 'Sleep', emoji: '🌙', color: 'from-indigo-400 to-purple-600' },
   ]
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4 animate-pulse">🌱</div>
-          <p className="text-gray-500 font-medium">Growing your garden...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return null
-  }
 
   const completionRate = Math.round((completedToday.size / habits.length) * 100)
 
@@ -73,14 +57,8 @@ export default function MeditationPage() {
           <div className="flex items-center gap-6">
             <div className="text-right">
               <p className="text-sm text-gray-500">Welcome</p>
-              <p className="text-lg font-semibold text-gray-900">{user.name || user.email.split('@')[0]}</p>
+              <p className="text-lg font-semibold text-gray-900">{userName}</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
-            >
-              Logout
-            </button>
           </div>
         </div>
       </header>
@@ -119,7 +97,7 @@ export default function MeditationPage() {
             return (
               <button
                 key={habit.id}
-                onClick={() => toggleHabit(habit.id)}
+                onClick={() => handleToggleHabit(habit.id)}
                 className={`relative overflow-hidden rounded-2xl p-8 transition-all duration-300 transform hover:scale-105 ${
                   isCompleted
                     ? `bg-gradient-to-br ${habit.color} shadow-lg`
