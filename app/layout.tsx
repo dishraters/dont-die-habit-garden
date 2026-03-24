@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Navbar from './components/Navbar'
-import { AuthProvider } from '@/lib/auth-context'
+import { SimpleAuthProvider } from './lib/simple-auth-context'
 
 export const metadata: Metadata = {
   title: "Don't Die Habit Garden",
@@ -16,10 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
+        <SimpleAuthProvider>
           <Navbar />
           {children}
-        </AuthProvider>
+        </SimpleAuthProvider>
       </body>
     </html>
   )

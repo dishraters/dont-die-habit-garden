@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/lib/auth-context'
+import { useSimpleAuth } from '../lib/simple-auth-context'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { signIn, signUp, signInWithGoogle, loading: authLoading } = useAuth()
+  const { signIn, signUp, loading: authLoading } = useSimpleAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -27,40 +27,27 @@ export default function LoginPage() {
           setLoading(false)
           return
         }
+        if (password.length < 6) {
+          setError('Password must be at least 6 characters')
+          setLoading(false)
+          return
+        }
         const result = await signUp(email, password, name)
         if (result.error) {
           setError(result.error.message)
         } else {
-          router.push('/meditation')
+          router.push('/')
         }
       } else {
         const result = await signIn(email, password)
         if (result.error) {
           setError(result.error.message)
         } else {
-          router.push('/meditation')
+          router.push('/')
         }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleGoogleLogin = async () => {
-    setLoading(true)
-    setError('')
-
-    try {
-      const result = await signInWithGoogle()
-      if (result.error) {
-        setError(result.error.message)
-      } else {
-        router.push('/meditation')
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google login failed')
     } finally {
       setLoading(false)
     }
@@ -81,26 +68,6 @@ export default function LoginPage() {
             {error}
           </div>
         )}
-
-        <button
-          onClick={handleGoogleLogin}
-          disabled={loading || authLoading}
-          className="w-full bg-white text-gray-800 border border-gray-300 px-4 py-2 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032 c0-3.331,2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.461,2.268,15.365,1.25,12.545,1.25 c-6.343,0-11.5,5.157-11.5,11.5c0,6.343,5.157,11.5,11.5,11.5c6.344,0,11.5-5.157,11.5-11.5c0-0.828-0.084-1.628-0.239-2.405 H12.545z" />
-          </svg>
-          Sign in with Google
-        </button>
-
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or with email</span>
-          </div>
-        </div>
 
         <form onSubmit={handleEmailAuth} className="space-y-4">
           {isSignUp && (

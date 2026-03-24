@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { useAuth } from '@/lib/auth-context'
+import { useSimpleAuth } from '../lib/simple-auth-context'
 
 const appLinks = [
   { href: '/', label: 'Garden' },
@@ -18,7 +18,7 @@ const appLinks = [
 export default function Navbar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const { user, loading, signOut } = useAuth()
+  const { user, loading, signOut } = useSimpleAuth()
 
   const isActive = (href: string) => pathname === href
 
@@ -58,7 +58,7 @@ export default function Navbar() {
         <div className="hidden items-center gap-3 lg:flex">
           {!loading && user ? (
             <>
-              <span className="text-sm text-green-900">Hi, {user.displayName || user.email?.split('@')[0] || 'Gardener'}</span>
+              <span className="text-sm text-green-900">Hi, {user.name || user.email?.split('@')[0] || 'Gardener'}</span>
               <button
                 onClick={handleSignOut}
                 className="rounded-full border border-green-200 px-4 py-2 text-sm font-medium text-green-700 transition hover:bg-green-50"

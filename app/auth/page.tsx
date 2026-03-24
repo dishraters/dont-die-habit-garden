@@ -3,19 +3,11 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/lib/auth-context'
-
-function getFriendlyError(message?: string) {
-  if (!message) return 'Something went wrong. Please try again.'
-  if (message.includes('email-already-in-use')) return 'That email is already in use.'
-  if (message.includes('weak-password')) return 'Password should be at least 6 characters.'
-  if (message.includes('invalid-email')) return 'Please enter a valid email address.'
-  return message
-}
+import { useSimpleAuth } from '../lib/simple-auth-context'
 
 export default function SignupPage() {
   const router = useRouter()
-  const { user, loading, signUp, signInWithGoogle } = useAuth()
+  const { user, loading, signUp } = useSimpleAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -37,25 +29,17 @@ export default function SignupPage() {
       return
     }
 
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.')
+      return
+    }
+
     setSubmitting(true)
     const result = await signUp(email, password, name)
     setSubmitting(false)
 
     if (result.error) {
-      setError(getFriendlyError(result.error.message))
-      return
-    }
-
-    router.push('/')
-  }
-
-  const handleGoogle = async () => {
-    setSubmitting(true)
-    const result = await signInWithGoogle()
-    setSubmitting(false)
-
-    if (result.error) {
-      setError(getFriendlyError(result.error.message))
+      setError(result.error.message)
       return
     }
 
@@ -72,24 +56,6 @@ export default function SignupPage() {
         </div>
 
         {error && <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-
-        <button
-          onClick={handleGoogle}
-          disabled={submitting}
-          className="mb-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-green-200 px-4 py-3 font-medium text-gray-700 transition hover:bg-green-50 disabled:opacity-60"
-        >
-          <span>✨</span>
-          Continue with Google
-        </button>
-
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-green-100" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase tracking-[0.2em] text-green-600">
-            <span className="bg-white px-3">or use email</span>
-          </div>
-        </div>
 
         <form onSubmit={handleSignup} className="space-y-4">
           <div>

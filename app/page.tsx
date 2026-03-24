@@ -15,7 +15,7 @@ import EarningsDashboard from './components/EarningsDashboard'
 import StreakMultiplier from './components/StreakMultiplier'
 import GoldenHatTracker from './components/GoldenHatTracker'
 import { saveHabitCompletion, loadUserHabits } from '@/lib/habitFunctions'
-import { useAuth } from '@/lib/auth-context'
+import { useSimpleAuth } from './lib/simple-auth-context'
 
 const HABITS = [
   { id: 'meditation', name: 'Meditation', emoji: '🧘', source: 'ddhg' as const },
@@ -120,7 +120,7 @@ function LandingPage() {
 }
 
 export default function Home() {
-  const { user, loading, signOut } = useAuth()
+  const { user, loading, signOut } = useSimpleAuth()
   const [completedToday, setCompletedToday] = useState<string[]>([])
   const [todayDDC, setTodayDDC] = useState(0)
   const [totalDDC, setTotalDDC] = useState(0)
@@ -129,8 +129,8 @@ export default function Home() {
   const [appLoading, setAppLoading] = useState(true)
   const [openModal, setOpenModal] = useState<string | null>(null)
 
-  const userId = user?.uid || 'guest'
-  const firstName = useMemo(() => user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'Gardener', [user])
+  const userId = user?.id || 'guest'
+  const firstName = useMemo(() => user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Gardener', [user])
 
   useEffect(() => {
     const init = async () => {
@@ -146,7 +146,7 @@ export default function Home() {
 
       setAppLoading(true)
       try {
-        const habits = await loadUserHabits(user.uid)
+        const habits = await loadUserHabits(user.id)
         setCompletedToday(habits.completedToday)
         setStreaks({ ...emptyStreaks(), ...habits.streaks })
         setTotalDDC(habits.totalDDC)
