@@ -119,6 +119,24 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="bg-white px-4 py-12 border-t border-green-100">
+        <div className="max-w-4xl mx-auto text-center">
+          <h3 className="text-2xl font-bold text-green-900 mb-3">Built by Sam across practical products and systems</h3>
+          <p className="text-gray-600 leading-relaxed">
+            If you run a service business and want practical AI help with follow-up, intake, websites, and automation,
+            check out{' '}
+            <a className="text-green-700 font-semibold hover:text-green-800" href="https://aibusinessboomer.io/">
+              Business Boomer
+            </a>{' '}
+            or explore{' '}
+            <a className="text-green-700 font-semibold hover:text-green-800" href="https://aibusinessboomer.io/industries">
+              AI automation for service businesses
+            </a>
+            .
+          </p>
+        </div>
+      </section>
+
       <footer className="bg-white border-t border-green-100 py-12">
         <div className="max-w-5xl mx-auto px-4">
           <div className="text-center">
